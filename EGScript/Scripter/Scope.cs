@@ -33,7 +33,7 @@ namespace EGScript.Scripter
 
         public void Define(string name)
         {
-            _variables.Add(name, ScriptEnvironment.NullObject);
+            _variables.Add(name, ObjectFactory.Null);
         }
 
         public void Define(string name, ScriptObject obj)
@@ -66,7 +66,7 @@ namespace EGScript.Scripter
         {
             var tmpList = new List<string>(_variables.Keys);
             foreach(var vari in tmpList)
-                _variables[vari] = ScriptEnvironment.NullObject;
+                _variables[vari] = ObjectFactory.Null;
         }
 
         public ScriptObject Find(string name)

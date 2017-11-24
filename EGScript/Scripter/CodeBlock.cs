@@ -1,4 +1,5 @@
 ﻿using EGScript.Objects;
+using EGScript.OperationCodes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,43 +10,19 @@ namespace EGScript.Scripter
 {
     public class CodeBlock
     {
-        private List<Instruction> _instructions { get; }
+        private List<OperationCodeBase> _instructions { get;}
+
         public CodeBlock()
         {
-            _instructions = new List<Instruction>();
+            _instructions = new List<OperationCodeBase>();
         }
 
-        public void Write(OperationCode op)
+        public void Write(OperationCodeBase op)
         {
-            _instructions.Add(new Instruction(op));
+            _instructions.Add(op);
         }
 
-        public void Write(OperationCode op, uint argument)
-        {
-            _instructions.Add(new Instruction(op, argument));
-        }
-
-        public void Write(OperationCode op, ScriptObject obj)
-        {
-            _instructions.Add(new Instruction(op, obj));
-        }
-
-        public void Write(OperationCode op, Scope scope)
-        {
-            _instructions.Add(new Instruction(op, scope));
-        }
-
-        public void Write(OperationCode op, Scope scope, ScriptObject obj)
-        {
-            _instructions.Add(new Instruction(op, scope, obj));
-        }
-
-        public void Write(OperationCode op, uint argument, ScriptObject obj)
-        {
-            _instructions.Add(new Instruction(op, argument, obj));
-        }
-
-        public Instruction this[int index] => _instructions[index];
+        public OperationCodeBase this[int index] => _instructions[index];
         public int Count => _instructions.Count;
     }
 }

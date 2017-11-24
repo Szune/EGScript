@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using EGScript.AbstractSyntaxTree;
 using EGScript.Objects;
+using EGScript.OperationCodes;
 
 namespace EGScript.Scripter
 {
@@ -61,14 +62,14 @@ namespace EGScript.Scripter
             Class newClass;
 
             if (baseName.Length == 0)
-                newClass = new Class(name);
+                newClass = ObjectFactory.Class(name);
             else
             {
                 var baseClass = _environment.FindClass(baseName);
                 if(baseClass == null)
                      throw new CompilerException($"Base class '{name}' has not been defined.");
 
-                newClass = new Class(name, baseClass);
+                newClass = ObjectFactory.Class(name, baseClass);
             }
 
             _environment.AddClass(newClass);
@@ -93,8 +94,8 @@ namespace EGScript.Scripter
 
             for(int i = functionDeclaration.Arguments.Count - 1; i >= 0; i--)
             {
-                function.Code.Write(OperationCode.SET, new StringObj(functionDeclaration.Arguments[i]));
-                function.Code.Write(OperationCode.POP);
+                function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(functionDeclaration.Arguments[i])));
+                function.Code.Write(OpCodeFactory.Pop);
             }
 
             if(functionDeclaration.Body != null)
@@ -102,20 +103,20 @@ namespace EGScript.Scripter
                 functionDeclaration.Body.Accept(this, function);
 
                 // We add this in case the user explicitly doesn't return anything in which case the function is void.
-                function.Code.Write(OperationCode.PUSH, ScriptEnvironment.NullObject);
-                function.Code.Write(OperationCode.RETURN);
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.Null));
+                function.Code.Write(OpCodeFactory.Return);
             }
         }
 
         public void Visit(ASTGlobalFunction functionDeclaration)
         {
-            var newFunction = new Function(functionDeclaration.Name, functionDeclaration.Arguments);
+            var newFunction = ObjectFactory.Function(functionDeclaration.Name, functionDeclaration.Arguments);
             _environment.AddFunction(newFunction);
 
             for (int i = functionDeclaration.Arguments.Count - 1; i >= 0; i--)
             {
-                newFunction.Code.Write(OperationCode.SET, new StringObj(functionDeclaration.Arguments[i]));
-                newFunction.Code.Write(OperationCode.POP);
+                newFunction.Code.Write(OpCodeFactory.Set(ObjectFactory.String(functionDeclaration.Arguments[i])));
+                newFunction.Code.Write(OpCodeFactory.Pop);
             }
 
             if(functionDeclaration.Body != null)
@@ -123,8 +124,8 @@ namespace EGScript.Scripter
                 functionDeclaration.Body.Accept(this, newFunction);
 
                 // We add this in case the user explicitly doesn't return anything in which case the function is void.
-                newFunction.Code.Write(OperationCode.PUSH, ScriptEnvironment.NullObject);
-                newFunction.Code.Write(OperationCode.RETURN);
+                newFunction.Code.Write(OpCodeFactory.Push(ObjectFactory.Null));
+                newFunction.Code.Write(OpCodeFactory.Return);
             }
         }
 
@@ -136,7 +137,7 @@ namespace EGScript.Scripter
 
         public void Visit(ASTFunctionDefinition functionDefinition, Class _class)
         {
-            var func = new Function(functionDefinition.Name, functionDefinition.Arguments);
+            var func = ObjectFactory.Function(functionDefinition.Name, functionDefinition.Arguments);
             _class.AddFunction(func);
         }
 
@@ -153,14 +154,14 @@ namespace EGScript.Scripter
             astIf.Condition.Accept(this, function);
 
             // If condition evaluates to false, branch past the if part
-            function.Code.Write(OperationCode.BRANCH_IF_FALSE, 0);
+            function.Code.Write(OpCodeFactory.BranchIfFalse(0));
             var index = function.Code.Count - 1;
 
             // Compile if-part
             astIf.IfPart.Accept(this, function);
 
             // Set the offset after compiling the if-part
-            function.Code[index].Argument = (uint)function.Code.Count;
+            function.Code[index].As<BranchIfFalse>().Argument = (uint)function.Code.Count;
 
             if (astIf.ElsePart != null)
                 astIf.ElsePart.Accept(this, function);
@@ -173,28 +174,28 @@ namespace EGScript.Scripter
             whileStatement.Condition.Accept(this, function);
 
             // branch out if condition evaluates to false
-            function.Code.Write(OperationCode.BRANCH_IF_FALSE, 0);
+            function.Code.Write(OpCodeFactory.BranchIfFalse(0));
             int conditionBranch = function.Code.Count - 1;
 
             // compile body
             whileStatement.Body.Accept(this, function);
 
             // branch back to the condition
-            function.Code.Write(OperationCode.BRANCH, (uint)condition);
+            function.Code.Write(OpCodeFactory.Branch((uint)condition));
             int end = function.Code.Count;
 
             // set the conditional branch offset
-            function.Code[conditionBranch].Argument = (uint)end;
+            function.Code[conditionBranch].As<BranchIfFalse>().Argument = (uint)end;
 
             // fill breaks/continues
 
             for(int i = condition; i < end; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction.OpCode == OperationCode.BRANCH && instruction.Argument == BREAK) // break, jump to end
-                    function.Code[i].Argument = (uint)end;
-                else if (instruction.OpCode == OperationCode.BRANCH && instruction.Argument == CONTINUE) // continue, jump to condition
-                    function.Code[i].Argument = (uint)condition;
+                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK) // break, jump to end
+                    breakBranch.Argument = (uint)end;
+                else if (instruction is Branch continueBranch && continueBranch.Argument == CONTINUE) // continue, jump to condition
+                    continueBranch.Argument = (uint)condition;
             }
         }
 
@@ -209,7 +210,7 @@ namespace EGScript.Scripter
             forStatement.Condition.Accept(this, function);
 
             // branch out if condition evaluates to false
-            function.Code.Write(OperationCode.BRANCH_IF_FALSE, 0);
+            function.Code.Write(OpCodeFactory.BranchIfFalse(0));
             int conditionBranch = function.Code.Count - 1;
 
             // compile body
@@ -220,20 +221,20 @@ namespace EGScript.Scripter
             forStatement.Incrementer.Accept(this, function);
 
             // branch back to condition
-            function.Code.Write(OperationCode.BRANCH, (uint)condition);
+            function.Code.Write(OpCodeFactory.Branch((uint)condition));
             int end = function.Code.Count;
 
-            // set the conditional branch offset
-            function.Code[conditionBranch].Argument = (uint)end;
+            // set the conditional branch offset (branch if false)
+            function.Code[conditionBranch].As<BranchIfFalse>().Argument = (uint)end;
 
             // fill breaks/continues
             for(int i = condition; i < end; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction.OpCode == OperationCode.BRANCH && instruction.Argument == BREAK)
-                    function.Code[i].Argument = (uint)end;
-                else if (instruction.OpCode == OperationCode.BRANCH && instruction.Argument == CONTINUE)
-                    function.Code[i].Argument = (uint)increment;
+                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK)
+                    breakBranch.Argument = (uint)end;
+                else if (instruction is Branch continueBranch && continueBranch.Argument == CONTINUE)
+                    continueBranch.Argument = (uint)increment;
             }
         }
 
@@ -243,7 +244,7 @@ namespace EGScript.Scripter
 
             // evaluate our first expression, set it to variable "[-switch-]"
             switchStatement.Expression.Accept(this, function);
-            function.Code.Write(OperationCode.DEF, switchObject);
+            function.Code.Write(OpCodeFactory.Define(switchObject));
 
             // create our jump table
             int startOfJumpTable = function.Code.Count;
@@ -255,14 +256,14 @@ namespace EGScript.Scripter
                 else
                 {
                     switchStatement.Cases[i].expression.Accept(this, function); // evaluate the comparison expression
-                    function.Code.Write(OperationCode.REF, switchObject); // reference our switch variable
-                    function.Code.Write(OperationCode.EQEQ); // compare them
-                    function.Code.Write(OperationCode.BRANCH_IF_TRUE, BRANCH_TO_CODE_BLOCK); // bramch if true to the actual code block
+                    function.Code.Write(OpCodeFactory.Reference(switchObject)); // reference our switch variable
+                    function.Code.Write(OpCodeFactory.EqualsEquals); // compare them
+                    function.Code.Write(OpCodeFactory.BranchIfTrue(BRANCH_TO_CODE_BLOCK)); // bramch if true to the actual code block
                 }
             }
 
             int endOfJumpTable = function.Code.Count;
-            function.Code.Write(OperationCode.BRANCH, 0);
+            function.Code.Write(OpCodeFactory.Branch(0));
 
             // write each case block
             int startBlocks = function.Code.Count;
@@ -273,9 +274,9 @@ namespace EGScript.Scripter
                 for(int j = startOfJumpTable; j < endOfJumpTable; j++)
                 {
                     var instruction = function.Code[j];
-                    if(instruction.OpCode == OperationCode.BRANCH_IF_TRUE && instruction.Argument == BRANCH_TO_CODE_BLOCK)
+                    if(instruction is BranchIfTrue branchToBlock && branchToBlock.Argument == BRANCH_TO_CODE_BLOCK)
                     {
-                        function.Code[j].Argument = (uint) function.Code.Count;
+                        branchToBlock.Argument = (uint) function.Code.Count;
                         break;
                     }
                 }
@@ -290,39 +291,39 @@ namespace EGScript.Scripter
 
             // set our final branch in case we had no default statement
             if (defaultCase)
-                function.Code[endOfJumpTable].Argument = (uint)lastBlock;
+                function.Code[endOfJumpTable].As<Branch>().Argument = (uint)lastBlock;
             else
-                function.Code[endOfJumpTable].Argument = (uint)endBlocks;
+                function.Code[endOfJumpTable].As<Branch>().Argument = (uint)endBlocks;
 
             // fill breaks
             for(int i = startBlocks; i < endBlocks; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction.OpCode == OperationCode.BRANCH && instruction.Argument == BREAK) // break, jump to end
-                    function.Code[i].Argument = (uint)endBlocks;
+                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK) // break, jump to end
+                    breakBranch.Argument = (uint)endBlocks;
             }
         }
 
         public void Visit(ASTBreak astBreak, Function function)
         {
-            function.Code.Write(OperationCode.BRANCH, BREAK);
+            function.Code.Write(OpCodeFactory.Branch(BREAK));
         }
 
         public void Visit(ASTContinue astContinue, Function function)
         {
-            function.Code.Write(OperationCode.BRANCH, CONTINUE);
+            function.Code.Write(OpCodeFactory.Branch(CONTINUE));
         }
 
         public void Visit(ASTReturn returnStatement, Function function)
         {
             returnStatement.ReturnExpression.Accept(this, function);
-            function.Code.Write(OperationCode.RETURN);
+            function.Code.Write(OpCodeFactory.Return);
         }
 
         public void Visit(ASTStatementExpression expressionStatement, Function function)
         {
             expressionStatement.Expression.Accept(this, function);
-            function.Code.Write(OperationCode.POP);
+            function.Code.Write(OpCodeFactory.Pop);
         }
 
         public void Visit(ASTExpressionBase expression, Function function)
@@ -342,12 +343,12 @@ namespace EGScript.Scripter
                     {
                         if (function.Scope.Find(expression.Variable) == null)
                         {
-                            function.Scope.Define(expression.Variable, ScriptEnvironment.NullObject);
+                            function.Scope.Define(expression.Variable, ObjectFactory.Null);
                         }
 
 
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.ADDITION:
@@ -357,10 +358,10 @@ namespace EGScript.Scripter
                             throw new CompilerException($"operator '+=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
 
-                        function.Code.Write(OperationCode.REF, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OperationCode.ADD);
-                        function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Add);
+                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.SUBTRACTION:
@@ -370,10 +371,10 @@ namespace EGScript.Scripter
                             throw new CompilerException($"operator '-=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
 
-                        function.Code.Write(OperationCode.REF, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OperationCode.SUB);
-                        function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Subtract);
+                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.MULTIPLICATION:
@@ -383,10 +384,10 @@ namespace EGScript.Scripter
                             throw new CompilerException($"operator '*=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
 
-                        function.Code.Write(OperationCode.REF, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OperationCode.MUL);
-                        function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Multiply);
+                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.DIVISION:
@@ -396,10 +397,10 @@ namespace EGScript.Scripter
                             throw new CompilerException($"operator '/=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
 
-                        function.Code.Write(OperationCode.REF, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OperationCode.DIV);
-                        function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
+                        function.Code.Write(OpCodeFactory.Divide);
+                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
             }
@@ -412,14 +413,14 @@ namespace EGScript.Scripter
 
             switch(expression.ComparisonType)
             {
-                case ASTCompare.OperationType.OR: function.Code.Write(OperationCode.OR); break;
-                case ASTCompare.OperationType.AND: function.Code.Write(OperationCode.AND); break;
-                case ASTCompare.OperationType.EQUALS_EQUALS: function.Code.Write(OperationCode.EQEQ); break;
-                case ASTCompare.OperationType.NOT_EQUALS: function.Code.Write(OperationCode.NEQ); break;
-                case ASTCompare.OperationType.LESS_THAN: function.Code.Write(OperationCode.LT); break;
-                case ASTCompare.OperationType.GREATER_THAN: function.Code.Write(OperationCode.GT); break;
-                case ASTCompare.OperationType.LESS_THAN_EQUALS: function.Code.Write(OperationCode.LTE); break;
-                case ASTCompare.OperationType.GREATER_THAN_EQUALS: function.Code.Write(OperationCode.GTE); break;
+                case ASTCompare.OperationType.OR: function.Code.Write(OpCodeFactory.Or); break;
+                case ASTCompare.OperationType.AND: function.Code.Write(OpCodeFactory.And); break;
+                case ASTCompare.OperationType.EQUALS_EQUALS: function.Code.Write(OpCodeFactory.EqualsEquals); break;
+                case ASTCompare.OperationType.NOT_EQUALS: function.Code.Write(OpCodeFactory.NotEquals); break;
+                case ASTCompare.OperationType.LESS_THAN: function.Code.Write(OpCodeFactory.LessThan); break;
+                case ASTCompare.OperationType.GREATER_THAN: function.Code.Write(OpCodeFactory.GreaterThan); break;
+                case ASTCompare.OperationType.LESS_THAN_EQUALS: function.Code.Write(OpCodeFactory.LessThanEquals); break;
+                case ASTCompare.OperationType.GREATER_THAN_EQUALS: function.Code.Write(OpCodeFactory.GreaterThanEquals); break;
             }
         }
 
@@ -430,10 +431,10 @@ namespace EGScript.Scripter
 
             switch(expression.MathOperationType)
             {
-                case ASTBinaryMathOperation.OperationType.PLUS: function.Code.Write(OperationCode.ADD); break;
-                case ASTBinaryMathOperation.OperationType.MINUS: function.Code.Write(OperationCode.SUB); break;
-                case ASTBinaryMathOperation.OperationType.TIMES: function.Code.Write(OperationCode.MUL); break;
-                case ASTBinaryMathOperation.OperationType.DIVIDE: function.Code.Write(OperationCode.DIV); break;
+                case ASTBinaryMathOperation.OperationType.PLUS: function.Code.Write(OpCodeFactory.Add); break;
+                case ASTBinaryMathOperation.OperationType.MINUS: function.Code.Write(OpCodeFactory.Subtract); break;
+                case ASTBinaryMathOperation.OperationType.TIMES: function.Code.Write(OpCodeFactory.Multiply); break;
+                case ASTBinaryMathOperation.OperationType.DIVIDE: function.Code.Write(OpCodeFactory.Divide); break;
             }
         }
 
@@ -443,10 +444,10 @@ namespace EGScript.Scripter
 
             switch(expression.MathOperationType)
             {
-                case ASTUnaryMathOperation.OperationType.MINUS: function.Code.Write(OperationCode.NEG); break;
-                case ASTUnaryMathOperation.OperationType.NOT: function.Code.Write(OperationCode.NOT); break;
-                case ASTUnaryMathOperation.OperationType.INCREMENT: function.Code.Write(OperationCode.INC); break;
-                case ASTUnaryMathOperation.OperationType.DECREMENT: function.Code.Write(OperationCode.DEC); break;
+                case ASTUnaryMathOperation.OperationType.MINUS: function.Code.Write(OpCodeFactory.Negate); break;
+                case ASTUnaryMathOperation.OperationType.NOT: function.Code.Write(OpCodeFactory.Not); break;
+                case ASTUnaryMathOperation.OperationType.INCREMENT: function.Code.Write(OpCodeFactory.Increment); break;
+                case ASTUnaryMathOperation.OperationType.DECREMENT: function.Code.Write(OpCodeFactory.Decrement); break;
             }
         }
 
@@ -470,12 +471,12 @@ namespace EGScript.Scripter
                 expression.Arguments[i].Accept(this, function);
             }
 
-            var instance = new Instance(_class);
+            var instance = ObjectFactory.Instance(_class);
 
-            function.Code.Write(OperationCode.PUSH, instance);
-            function.Code.Write(OperationCode.PUSH, new Number(expression.Arguments.Count));
-            function.Code.Write(OperationCode.MCALL, new StringObj(expression.Name));
-            function.Code.Write(OperationCode.PUSH, instance);
+            function.Code.Write(OpCodeFactory.Push(instance));
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(expression.Arguments.Count)));
+            function.Code.Write(OpCodeFactory.MemberFunctionCall(ObjectFactory.String(expression.Name)));
+            function.Code.Write(OpCodeFactory.Push(instance));
         }
 
 
@@ -487,8 +488,8 @@ namespace EGScript.Scripter
                 for(int i = 0; i < expression.Arguments.Count; i++)
                     expression.Arguments[i].Accept(this, function);
 
-                function.Code.Write(OperationCode.PUSH, new Number(expression.Arguments.Count));
-                function.Code.Write(OperationCode.ECALL, new StringObj(expression.Name));
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(expression.Arguments.Count)));
+                function.Code.Write(OpCodeFactory.ExportedFunctionCall(ObjectFactory.String(expression.Name)));
             }
             else
             {
@@ -502,7 +503,7 @@ namespace EGScript.Scripter
                 for (int i = 0; i < expression.Arguments.Count; i++)
                     expression.Arguments[i].Accept(this, function);
 
-                function.Code.Write(OperationCode.CALL, new StringObj(expression.Name));
+                function.Code.Write(OpCodeFactory.FunctionCall(ObjectFactory.String(expression.Name)));
             }
         }
 
@@ -511,9 +512,9 @@ namespace EGScript.Scripter
             for (int i = 0; i < expression.Arguments.Count; i++)
                 expression.Arguments[i].Accept(this, function);
 
-            function.Code.Write(OperationCode.REF, new StringObj(expression.Base));
-            function.Code.Write(OperationCode.PUSH, new Number(expression.Arguments.Count));
-            function.Code.Write(OperationCode.MCALL, new StringObj(expression.Name));
+            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Base)));
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(expression.Arguments.Count)));
+            function.Code.Write(OpCodeFactory.MemberFunctionCall(ObjectFactory.String(expression.Name)));
         }
 
         public void Visit(ASTIdentifier expression, Function function)
@@ -522,49 +523,49 @@ namespace EGScript.Scripter
 
             if(variable == null)
             {
-                function.Scope.Define(expression.Name, ScriptEnvironment.NullObject);
+                function.Scope.Define(expression.Name, ObjectFactory.Null);
                 variable = function.Scope.Find(expression.Name);
             }
 
-            function.Code.Write(OperationCode.REF, new StringObj(expression.Name));
+            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Name)));
         }
 
         public void Visit(ASTNumber number, Function function)
         {
-            function.Code.Write(OperationCode.PUSH, new Number(number.Value));
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(number.Value)));
         }
 
         public void Visit(ASTString str, Function function)
         {
-            function.Code.Write(OperationCode.PUSH, new StringObj(str.Text));
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.String(str.Text)));
         }
 
         public void Visit(ASTNull nul, Function function)
         {
-            function.Code.Write(OperationCode.PUSH, ScriptEnvironment.NullObject);
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Null));
         }
 
         public void Visit(ASTTrue expression, Function function)
         {
-            function.Code.Write(OperationCode.PUSH, ScriptEnvironment.TrueObject);
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.True));
         }
 
         public void Visit(ASTFalse expression, Function function)
         {
-            function.Code.Write(OperationCode.PUSH, ScriptEnvironment.FalseObject);
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.False));
         }
 
         public void Visit(ASTTable astTable, Function function)
         {
             for (int i = 0; i < astTable.IntegerValues.Count; i++)
                 astTable.IntegerValues[i].Accept(this, function);
-            function.Code.Write(OperationCode.PUSH, new Number(astTable.IntegerValues.Count)); // push number of integer value keys + values
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(astTable.IntegerValues.Count))); // push number of integer value keys + values
 
             foreach (var stringVal in astTable.StringValues)
                 stringVal.Value.Accept(this, function);
-            function.Code.Write(OperationCode.PUSH, new Number(astTable.StringValues.Count)); // push number of string value keys + values
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(astTable.StringValues.Count))); // push number of string value keys + values
 
-            function.Code.Write(OperationCode.MAKE_TABLE); // make table out of keys and values
+            function.Code.Write(OpCodeFactory.MakeTable); // make table out of keys and values
         }
 
         public void Visit(ASTTableGet astTableGet, Function function)
@@ -579,16 +580,16 @@ namespace EGScript.Scripter
             {
                 // PUSH object at the table index
                 astTableGet.TableIndexes[0].Accept(this, function); // push the index of the item to return
-                function.Code.Write(OperationCode.PUSH, new Number(1)); // push the amount of indexes we are getting
-                function.Code.Write(OperationCode.REF, REFERENCE_TABLE_INDEX, new StringObj(identifier.Name)); // reference the table
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(1))); // push the amount of indexes we are getting
+                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), REFERENCE_TABLE_INDEX));// reference the table
             }
             else
             {
                 for (int i = astTableGet.TableIndexes.Count - 1; i >= 0;  i--) // push all indexes
                     astTableGet.TableIndexes[i].Accept(this, function);
 
-                function.Code.Write(OperationCode.PUSH, new Number(astTableGet.TableIndexes.Count)); // push the amount of indexes
-                function.Code.Write(OperationCode.REF, REFERENCE_TABLE_INDEX, new StringObj(identifier.Name)); // reference the table
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(astTableGet.TableIndexes.Count))); // push the amount of indexes
+                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), REFERENCE_TABLE_INDEX)); // reference the table
             }
         }
 
@@ -596,15 +597,15 @@ namespace EGScript.Scripter
         {
             astTableElement.Value.Accept(this, function); // push value first
             if (astTableElement.Type == ExpressionType.STRING)
-                function.Code.Write(OperationCode.PUSH, new StringObj(astTableElement.StringKey)); // push string key if string key
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.String(astTableElement.StringKey))); // push string key if string key
             else if (astTableElement.Type == ExpressionType.NUMBER)
-                function.Code.Write(OperationCode.PUSH, new Number(astTableElement.IntKey)); // push number key if number key
+                function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(astTableElement.IntKey))); // push number key if number key
         }
 
         public void Visit(ASTCount astCount, Function function)
         {
-            function.Code.Write(OperationCode.REF, new StringObj(astCount.Identifier));
-            function.Code.Write(OperationCode.COUNT);
+            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(astCount.Identifier)));
+            function.Code.Write(OpCodeFactory.Count);
         }
 
         public void Visit(ASTGlobalVariableAssignment astGlobalVariableAssignment)

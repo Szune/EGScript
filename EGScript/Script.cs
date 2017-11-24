@@ -34,7 +34,7 @@ namespace EGScript
                         return new Number(_rand.Next((int)n1.Value, (int)n2.Value));
                     }
             }
-            return ScriptEnvironment.NullObject;
+            return ObjectFactory.Null;
         }
 
         private void ExportGeneralFunctions()

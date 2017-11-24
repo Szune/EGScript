@@ -1,5 +1,6 @@
 ﻿using EGScript.AbstractSyntaxTree;
 using EGScript.Objects;
+using EGScript.OperationCodes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,6 @@ namespace EGScript.Scripter
     {
         private List<Class> _classes { get; }
         private List<Function> _functions { get; }
-        public static ScriptObject NullObject = new Null();
-        public static ScriptObject TrueObject = new True();
-        public static ScriptObject FalseObject = new False();
         public Dictionary<string, ExportedFunction> exportedFunctions;
 
 
@@ -29,16 +27,17 @@ namespace EGScript.Scripter
 
         private void CreateGeneralClasses()
         {
+            // TODO: work on class implementation
             var table = new Class("table");
             var func = new Function("count", new List<string> { "tname" });
-            func.Code.Write(OperationCode.SET, new StringObj("tname"));
-            func.Code.Write(OperationCode.POP);
-            func.Code.Write(OperationCode.REF, new StringObj("tname"));
-            func.Code.Write(OperationCode.RETURN);
+            func.Code.Write(OpCodeFactory.Set(ObjectFactory.String("tname")));
+            func.Code.Write(OpCodeFactory.Pop);
+            func.Code.Write(OpCodeFactory.Reference(ObjectFactory.String("tname")));
+            func.Code.Write(OpCodeFactory.Return);
             table.AddFunction(func);
             var constructor = new Function("table", new List<string>());
-            constructor.Code.Write(OperationCode.PUSH, NullObject);
-            constructor.Code.Write(OperationCode.RETURN);
+            constructor.Code.Write(OpCodeFactory.Push(ObjectFactory.Null));
+            constructor.Code.Write(OpCodeFactory.Return);
             table.AddFunction(constructor);
             _classes.Add(table);
         }
