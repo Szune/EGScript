@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EGScript
+namespace EGScript.AbstractSyntaxTree
 {
-    public class Class1
+    public class ASTCondition
     {
     }
 }
