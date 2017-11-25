@@ -42,8 +42,7 @@ function main()
     print("" - - "");
 return var1 + var2;
 }");
-            ((StringObj)script.Run()).Text.Should().Be("10 jez");
-            ((StringObj)script.Run()).Text.Should().Be("10 jez");
+            script.Run().As<StringObj>().Text.Should().Be("10 jez");
         }
 
         [TestMethod]
@@ -60,8 +59,7 @@ function main()
     return 5;
 }").Run();
 
-            ((Number)script).Value.Should().Be(5);
-            ((Number)script).Value.Should().Be(5);
+            script.As<Number>().Value.Should().Be(5);
         }
 
         [TestMethod]
@@ -84,9 +82,7 @@ function test()
 {
     return test2();
 }");
-            
-            ((Number)script.Run()).Value.Should().Be(10);
-            ((Number)script.Run()).Value.Should().Be(10);
+            script.Run().As<Number>().Value.Should().Be(10);
         }
 
         [TestMethod]
@@ -129,8 +125,7 @@ function test()
     return var;
 }");
             var run = script.Run();
-            run.Should().BeOfType<Number>();
-            ((Number)run).Value.Should().Be(11);
+            run.As<Number>().Value.Should().Be(11);
         }
 
 
@@ -168,8 +163,7 @@ function test()
     return var;
 }");
             var run = script.Run();
-            run.Should().BeOfType<Number>();
-            ((Number)run).Value.Should().Be(3);
+            run.As<Number>().Value.Should().Be(3);
         }
 
         [TestMethod]
@@ -186,8 +180,7 @@ function test(namn)
 }
 ");
             var run = script.Run();
-            run.Should().BeOfType<StringObj>();
-            ((StringObj)run).Text.Should().Be("Good morning, Erik.");
+            run.As<StringObj>().Text.Should().Be("Good morning, Erik.");
         }
 
         [TestMethod]
@@ -204,8 +197,7 @@ function test(namn, age)
 }
 ");
             var run = script.Run();
-            run.Should().BeOfType<StringObj>();
-            ((StringObj)run).Text.Should().Be("Good morning, Erik. Wow this is a very useful function because it outputs your own age!! (and it is 24)");
+            run.As<StringObj>().Text.Should().Be("Good morning, Erik. Wow this is a very useful function because it outputs your own age!! (and it is 24)");
         }
 
         [TestMethod]
@@ -260,8 +252,8 @@ function test(namn, age)
 {
     return random(5);
 }");
-            var run = (Number)script.Run();
-            ((Number)script.Run()).Value.Should().BeInRange(0, 5);
+            var run = script.Run();
+            run.As<Number>().Value.Should().BeInRange(0, 5);
         }
 
         [TestMethod]
@@ -271,8 +263,8 @@ function test(namn, age)
 {
     return random(3,7);
 }");
-            var run = (Number)script.Run();
-            ((Number)script.Run()).Value.Should().BeInRange(3, 7);
+            var run = script.Run();
+            run.As<Number>().Value.Should().BeInRange(3, 7);
         }
 
         [TestMethod]
@@ -536,7 +528,7 @@ function test(namn, age)
     return 7 * 3;
 }");
             var run = script.Run();
-            ((Number)run).Value.Should().Be(21);
+            run.As<Number>().Value.Should().Be(21);
         }
 
         [TestMethod]
@@ -563,7 +555,7 @@ function main()
     return includedFunction(10);
 }", fileToInclude.Object);
             var run = script.Run();
-            ((Number)run).Value.Should().Be(15);
+            run.As<Number>().Value.Should().Be(15);
         }
 
 
@@ -578,7 +570,7 @@ function main()
     return inc(10);
 }");
             var run = script.Run();
-            ((Number)run).Value.Should().Be(22);
+            run.As<Number>().Value.Should().Be(22);
         }
 
         [TestMethod]
@@ -592,7 +584,7 @@ function main()
     return twice(10);
 }");
             var run = script.Run();
-            ((Number)run).Value.Should().Be(5);
+            run.As<Number>().Value.Should().Be(5);
         }
 
         [TestMethod]
@@ -671,8 +663,7 @@ function main()
     return var;
 }");
             var run = script.Run();
-            run.Should().BeOfType<Number>();
-            ((Number)run).Value.Should().Be(25);
+            run.As<Number>().Value.Should().Be(25);
         }
 
         [TestMethod]
@@ -685,8 +676,7 @@ function main()
     return var;
 }");
             var run = script.Run();
-            run.Should().BeOfType<Number>();
-            ((Number)run).Value.Should().Be(4);
+            run.As<Number>().Value.Should().Be(4);
         }
 
 

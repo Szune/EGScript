@@ -122,5 +122,10 @@ namespace EGScript.Objects
         public virtual bool TryGetFalse(out False f) { f = null; return false; }
         public virtual bool TryGetInstance(out Instance i) { i = null; return false; }
         public virtual bool TryGetTable(out Table t) { t = null; return false; }
+
+        public TObjectType As<TObjectType>() where TObjectType : ScriptObject
+        {
+            return this as TObjectType;
+        }
     }
 }

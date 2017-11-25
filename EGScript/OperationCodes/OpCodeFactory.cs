@@ -96,7 +96,7 @@ namespace EGScript.OperationCodes
 
         public static FunctionCall FunctionCall(StringObj functionName)
         {
-            return new OperationCodes.FunctionCall(functionName);
+            return new FunctionCall(functionName);
         }
 
         public static Reference Reference(StringObj variableName, uint argument)
