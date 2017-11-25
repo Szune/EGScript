@@ -33,7 +33,16 @@ namespace EGScript.Scripter
             _frames.Push(new CallFrame(func));
             _scopes.Push(func.Scope);
 
+            // set up globals
+            if (_environment.Globals.Code.Count > 0)
+            {
+                _environment.Globals.Code.Write(OpCodeFactory.Return); // return to main function afterwards
+                _frames.Push(new CallFrame(_environment.Globals));
+                _scopes.Push(_environment.Globals.Scope);
+            }
+
             var state = new InterpreterState(_environment, _frames, _stack, _scopes);
+
 
             while (_frames.Count > 0)
             {
@@ -44,9 +53,12 @@ namespace EGScript.Scripter
 
                 instruction.Execute(state);
 
-                if (!(instruction is Return ret)) continue; // check if instruction was a return instruction
-                if (ret.ScriptExecutionFinished) // check if it's returning from main()
+                if (instruction is Return ret) // check if instruction was a return instruction
+                {
+                    if (!ret.ScriptExecutionFinished) continue; // check if it's returning from main()
+
                     return ret.ReturnObject; // return usable object
+                }
             }
 
             return ObjectFactory.Null;

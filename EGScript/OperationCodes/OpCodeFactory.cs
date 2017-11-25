@@ -103,5 +103,10 @@ namespace EGScript.OperationCodes
         {
             return new Reference(variableName, argument);
         }
+
+        public static Global Global(StringObj variableName)
+        {
+            return new Global(variableName);
+        }
     }
 }

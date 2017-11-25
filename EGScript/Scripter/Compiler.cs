@@ -608,18 +608,39 @@ namespace EGScript.Scripter
             function.Code.Write(OpCodeFactory.Count);
         }
 
-        public void Visit(ASTGlobalVariableAssignment astGlobalVariableAssignment)
+        public void Visit(ASTGlobalVariableAssignment expression)
         {
-            // Should add to scriptenvironment, which should be global scope?
-            /*  if (function.Scope.Find(expression.Variable) == null)
-                {
-                    function.Scope.Define(expression.Variable, ScriptEnvironment.NullObject);
-                }
+            expression.Expression.Accept(this, _environment.Globals);
+            _environment.Globals.Code.Write(OpCodeFactory.Global(ObjectFactory.String(expression.Variable)));
 
-
-                expression.Expression.Accept(this, function);
-                function.Code.Write(OperationCode.SET, new StringObj(expression.Variable));
-            */
+            // more fun way to do the same thing as in opcode 'Global':
+            //if (_environment.Globals.Scope.Find(expression.Variable) == null)
+            //{
+            //    _environment.Globals.Scope.Define(expression.Variable, ObjectFactory.Null);
+            //}
+            //else
+            //{
+            //    // reference variable value
+            //    _environment.Globals.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
+            //    // evaluate assignment expression
+            //    expression.Expression.Accept(this, _environment.Globals);
+            //    // check if referenced value equals evaluated value
+            //    _environment.Globals.Code.Write(OpCodeFactory.EqualsEquals);
+            //    // branch if both values are equivalent
+            //    var branchTrue = _environment.Globals.Code.Count;
+            //    _environment.Globals.Code.Write(OpCodeFactory.BranchIfTrue(0));
+            //    // push argument of exported function call
+            //    _environment.Globals.Code.Write(OpCodeFactory.Push(ObjectFactory.String($"Initializing a global variable ('{expression.Variable}') with two different values is not possible.")));
+            //    // push number of arguments for exported function call
+            //    _environment.Globals.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(1)));
+            //    // call exported function
+            //    _environment.Globals.Code.Write(OpCodeFactory.ExportedFunctionCall(ObjectFactory.String("error")));
+            //    // branch to next line if true
+            //    _environment.Globals.Code[branchTrue].As<BranchIfTrue>().Argument = (uint)_environment.Globals.Code.Count;
+            //    return;
+            //}
+            //expression.Expression.Accept(this, _environment.Globals);
+            //_environment.Globals.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
         }
     }
 }

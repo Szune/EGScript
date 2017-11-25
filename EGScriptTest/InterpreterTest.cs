@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Linq;
 
 namespace EGScriptTest
 {
@@ -728,13 +729,118 @@ global
 {
     var1 = 3246;
     var2 = ""hellooo"";
+    var3 = wha();
+}
+
+function wha()
+{
+    return 5 * 10;
 }
 
 function main()
 {
     print(var1);
+    print(var2);
+    print(var3);
 }");
             var run = script.Run();
+            printer.PrintedMessages[0].Should().Be("3246");
+            printer.PrintedMessages[1].Should().Be("hellooo");
+            printer.PrintedMessages[2].Should().Be("50");
+        }
+
+        [TestMethod]
+        public void IntegrationTest_GlobalVar_In_Include()
+        {
+            var includedScript = @"global
+{
+    ITERATION_COUNT = 10;
+    ITERATION_NAME = ""TEST"";
+}
+";
+            var incScript2 = @"
+include ""includeFile.soup"";
+
+function doWork()
+{
+    for(i = 0; i < ITERATION_COUNT; i++)
+    {
+        print(""doWork: "" + i);
+    }
+}
+";
+            var fileToInclude = new Mock<IFileHandler>();
+            fileToInclude.Setup(c => c.ReadFileToEnd(It.Is<string>(s => s == "includeFile.soup"))).Returns(includedScript);
+            fileToInclude.Setup(c => c.ReadFileToEnd(It.Is<string>(s => s == "includeFile2.soup"))).Returns(incScript2);
+            fileToInclude.Setup(c => c.WorkingDirectory).Returns("");
+            fileToInclude.Setup(c => c.Copy(It.IsAny<string>())).Returns(fileToInclude.Object);
+            var script = new Script(@"
+include ""includeFile.soup"";
+include ""includeFile2.soup"";
+
+global
+{
+    ITERATION_COUNT = 10;
+}
+
+function main()
+{
+    for(i = 0; i < ITERATION_COUNT; i++)
+    {
+        print(""main:"" + i);
+    }
+    doWork();
+}", fileToInclude.Object);
+
+            var run = script.Run();
+            printer.PrintedMessages.Should().HaveCount(20);
+        }
+
+        [TestMethod]
+        public void IntegrationTest_GlobalVar_In_Include_Different_Values()
+        {
+            var includedScript = @"global
+{
+    ITERATION_COUNT = 10;
+    ITERATION_NAME = ""TEST"";
+}
+";
+            var incScript2 = @"
+include ""includeFile.soup"";
+
+function doWork()
+{
+    for(i = 0; i < ITERATION_COUNT; i++)
+    {
+        print(""doWork: "" + i);
+    }
+}
+";
+            var fileToInclude = new Mock<IFileHandler>();
+            fileToInclude.Setup(c => c.ReadFileToEnd(It.Is<string>(s => s == "includeFile.soup"))).Returns(includedScript);
+            fileToInclude.Setup(c => c.ReadFileToEnd(It.Is<string>(s => s == "includeFile2.soup"))).Returns(incScript2);
+            fileToInclude.Setup(c => c.WorkingDirectory).Returns("");
+            fileToInclude.Setup(c => c.Copy(It.IsAny<string>())).Returns(fileToInclude.Object);
+            var script = new Script(@"
+include ""includeFile.soup"";
+include ""includeFile2.soup"";
+
+global
+{
+    ITERATION_COUNT = 5;
+}
+
+function main()
+{
+    for(i = 0; i < ITERATION_COUNT; i++)
+    {
+        print(""main:"" + i);
+    }
+    doWork();
+}", fileToInclude.Object);
+
+            Action run = () => script.Run();
+            run.Should().ThrowExactly<InterpreterException>();
         }
     }
 }

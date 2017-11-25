@@ -14,7 +14,7 @@ namespace EGScript
         private ScriptObject Print(ScriptEnvironment env, List<ScriptObject> args)
         {
             Settings.Printer.Print(args[0].ToString());
-            return null;
+            return ObjectFactory.Null;
         }
 
         private ScriptObject RandomNum(ScriptEnvironment env, List<ScriptObject> args)
@@ -37,10 +37,16 @@ namespace EGScript
             return ObjectFactory.Null;
         }
 
+        private ScriptObject Error(ScriptEnvironment env, List<ScriptObject> args)
+        {
+            throw new ScriptException($"{args.First().ToString()}");
+        }
+
         private void ExportGeneralFunctions()
         {
             _environment.ExportFunction(new ExportedFunction("print", Print, (1, 1)));
             _environment.ExportFunction(new ExportedFunction("random", RandomNum, (1, 2)));
+            _environment.ExportFunction(new ExportedFunction("error", Error, (1, 1)));
         }
 
         private readonly Random _rand;
@@ -96,9 +102,19 @@ namespace EGScript
             _interpreter = new Interpreter(_environment);
         }
 
-        public ScriptObject Run()
+        public ScriptObject Run(bool hideErrors = false)
         {
-            return _interpreter.Execute();
+            if (!hideErrors)
+                return _interpreter.Execute();
+            else
+                try
+                {
+                    return _interpreter.Execute();
+                }
+                catch
+                {
+                    return ObjectFactory.Null;
+                }
         }
     }
 }

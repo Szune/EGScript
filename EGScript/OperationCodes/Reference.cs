@@ -9,6 +9,9 @@ using EGScript.Objects;
 namespace EGScript.OperationCodes
 {
     // TODO: Should probably refactor the table stuff
+    /// <summary>
+    /// References a variable from the stack.
+    /// </summary>
     public class Reference : OperationCodeBase
     {
         public Reference(ScriptObject variableName)
@@ -28,9 +31,19 @@ namespace EGScript.OperationCodes
         {
             if (!VariableName.TryGetString(out StringObj s))
                 throw new InterpreterException($"Instruction object was of type '{VariableName.TypeName}', expected 'string'.");
-            var arg = state.Scopes.Peek().Find(s.Text);
-            if (Argument != Compiler.REFERENCE_TABLE_INDEX)
+
+            // check for global vars
+            var arg = state.Environment.Globals.Scope.Find(s.Text);
+            if (arg != null && Argument != Compiler.REFERENCE_TABLE_INDEX)
             {
+                state.Stack.Push(arg);
+                return;
+            }
+
+            // check for local vars
+            arg = state.Scopes.Peek().Find(s.Text);
+            if (Argument != Compiler.REFERENCE_TABLE_INDEX)
+            { 
                 state.Stack.Push(arg);
                 return;
             }

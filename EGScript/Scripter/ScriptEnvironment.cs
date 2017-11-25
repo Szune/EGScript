@@ -14,6 +14,7 @@ namespace EGScript.Scripter
         private List<Class> _classes { get; }
         private List<Function> _functions { get; }
         public Dictionary<string, ExportedFunction> exportedFunctions;
+        public Function Globals = new Function("");
 
 
         public ScriptEnvironment()

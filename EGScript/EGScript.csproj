@@ -97,6 +97,7 @@
     <Compile Include="OperationCodes\Divide.cs" />
     <Compile Include="OperationCodes\ExportedFunctionCall.cs" />
     <Compile Include="OperationCodes\EqualsEquals.cs" />
+    <Compile Include="OperationCodes\Global.cs" />
     <Compile Include="OperationCodes\GreaterThan.cs" />
     <Compile Include="OperationCodes\GreaterThanEquals.cs" />
     <Compile Include="OperationCodes\Increment.cs" />

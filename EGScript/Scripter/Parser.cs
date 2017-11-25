@@ -37,7 +37,7 @@ namespace EGScript.Scripter
                 {
                     case TokenType.INCLUDE:
                         Consume();
-                        IncludeScript(classDeclarations, functionDeclarations);
+                        IncludeScript(classDeclarations, functionDeclarations, globalVars);
                         break;
                     case TokenType.GLOBAL:
                         Consume();
@@ -79,7 +79,7 @@ namespace EGScript.Scripter
             Require(TokenType.RIGHT_BRACE);
         }
 
-        private void IncludeScript(List<ASTClassDefinition> classDeclarations, List<ASTFunctionBase> functionDeclarations)
+        private void IncludeScript(List<ASTClassDefinition> classDeclarations, List<ASTFunctionBase> functionDeclarations, List<ASTGlobalVariableAssignment> globalVars)
         {
             // include "script.soup";
             // get script name
@@ -97,6 +97,11 @@ namespace EGScript.Scripter
             for(int i = 0; i < includedScript.Functions.Count; i++)
             {
                 functionDeclarations.Add(includedScript.Functions[i]);
+            }
+
+            for(int i = 0; i < includedScript.GlobalVars.Count; i++)
+            {
+                globalVars.Add(includedScript.GlobalVars[i]);
             }
         }
 
