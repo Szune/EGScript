@@ -9,15 +9,20 @@ using System.Threading.Tasks;
 
 namespace EGScript
 {
+    /// <summary>
+    /// A script that can be run.
+    /// </summary>
     public class Script
     {
-        private ScriptObject Print(ScriptEnvironment env, List<ScriptObject> args)
+
+
+        protected virtual ScriptObject Print(ScriptEnvironment env, List<ScriptObject> args)
         {
-            Settings.Printer.Print(args[0].ToString());
+            _settings.Printer.Print(args[0].ToString());
             return ObjectFactory.Null;
         }
 
-        private ScriptObject RandomNum(ScriptEnvironment env, List<ScriptObject> args)
+        protected virtual ScriptObject RandomNum(ScriptEnvironment env, List<ScriptObject> args)
         {
             switch(args.Count)
             {
@@ -37,12 +42,12 @@ namespace EGScript
             return ObjectFactory.Null;
         }
 
-        private ScriptObject Error(ScriptEnvironment env, List<ScriptObject> args)
+        protected virtual ScriptObject Error(ScriptEnvironment env, List<ScriptObject> args)
         {
             throw new ScriptException($"{args.First().ToString()}");
         }
 
-        private void ExportGeneralFunctions()
+        protected virtual void ExportGeneralFunctions()
         {
             _environment.ExportFunction(new ExportedFunction("print", Print, (1, 1)));
             _environment.ExportFunction(new ExportedFunction("random", RandomNum, (1, 2)));
@@ -52,13 +57,14 @@ namespace EGScript
         private readonly Random _rand;
         private readonly ScriptEnvironment _environment; // environment contains the script (starting point = function main())
         private readonly Interpreter _interpreter; // interpreter runs the script
+        private readonly Settings _settings;
 
         public Script(string code) : this(code, new FileHandler())
         {
 
         }
 
-        public Script(string code, List<ExportedFunction> exportedFunctions) : this(code, exportedFunctions, new FileHandler())
+        public Script(string code, Settings settings) : this(code, settings, new FileHandler())
         {
 
         }
@@ -72,6 +78,7 @@ namespace EGScript
             var parser = new Parser(lexer, fileHandler);
             var ast = parser.ParseScript();
             _environment = new ScriptEnvironment();
+            _settings = Settings.Default;
             // export functions here
             ExportGeneralFunctions();
             Compiler.Compile(_environment, ast); // from here on, you can reuse "_environment" (ScriptEnvironment),
@@ -80,7 +87,7 @@ namespace EGScript
             _interpreter = new Interpreter(_environment);
         }
 
-        public Script(string code, List<ExportedFunction> exportedFunctions, IFileHandler fileHandler)
+        public Script(string code, Settings settings, IFileHandler fileHandler)
         {
             // later: get lexer and parser from object pool
             // also get filehandler from object pool
@@ -89,12 +96,13 @@ namespace EGScript
             var parser = new Parser(lexer, fileHandler);
             var ast = parser.ParseScript();
             _environment = new ScriptEnvironment();
+            _settings = settings;
 
             // export functions here
             ExportGeneralFunctions();
-            for(int i = 0; i < exportedFunctions.Count; i++)
+            foreach(var func in _settings.ExportedFunctions)
             {
-                _environment.ExportFunction(exportedFunctions[i]);
+                _environment.ExportFunction(func);
             }
             Compiler.Compile(_environment, ast); // from here on, you can reuse "_environment" (ScriptEnvironment),
                                                  // as an already compiled script (which will be important for performance later on,

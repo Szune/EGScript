@@ -1,4 +1,5 @@
 ﻿using EGScript.Helpers;
+using EGScript.Scripter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,38 +8,17 @@ using System.Threading.Tasks;
 
 namespace EGScript
 {
-    public sealed class Settings
+    public class Settings
     {
 
-        public static Settings Current { get; private set; }
-        private IPrinter printer; // will be reset if settings are reset
-
-        static Settings()
+        public static Settings Default => new Settings();
+        public IPrinter Printer;
+        public IEnumerable<ExportedFunction> ExportedFunctions;
+        
+        public Settings()
         {
-            Current = new Settings();
+            Printer = new ConsolePrinter();
+            ExportedFunctions = new List<ExportedFunction>();
         }
-
-        private Settings()
-        {
-            printer = new ConsolePrinter();
-        }
-
-        public static void Reset()
-        {
-            Current = new Settings();
-        }
-
-        public static IPrinter Printer {
-            get
-            {
-                return Current.printer;
-            }
-            set
-            {
-                if (value != null)
-                    Current.printer = value;
-            }
-        }
-
     }
 }

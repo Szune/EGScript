@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EGScriptTest
@@ -13,13 +14,13 @@ namespace EGScriptTest
     [TestClass]
     public class InterpreterTest
     {
-        TestPrinter printer => Settings.Printer as TestPrinter;
+        Settings settings;
+        TestPrinter printer => settings.Printer as TestPrinter;
 
         [TestInitialize]
         public void InitializeTest()
         {
-            Settings.Reset();
-            Settings.Printer = new TestPrinter();
+            settings = new Settings { Printer = new TestPrinter() };
         }
 
         [TestMethod]
@@ -601,7 +602,7 @@ function main()
         case 5:
             print(var);
     }
-}");
+}", settings);
             // fallthrough /\
             var run = script.Run();
             printer.PrintedMessages.Should().BeEquivalentTo(new[] { "10", "10" });
@@ -622,7 +623,7 @@ function main()
             print(var);
             break;
     }
-}");
+}", settings);
             // fallthrough /\
             var run = script.Run();
             printer.PrintedMessages.Should().BeEquivalentTo(new[] { "15" });
@@ -647,7 +648,7 @@ function main()
                 break;
             }
     }
-}");
+}", settings);
             // fallthrough /\
             var run = script.Run();
             printer.PrintedMessages.Should().BeEquivalentTo(new[] { "17" });
@@ -732,7 +733,7 @@ function main()
     print(var1);
     print(var2);
     print(var3);
-}");
+}", settings);
             var run = script.Run();
             printer.PrintedMessages[0].Should().Be("3246");
             printer.PrintedMessages[1].Should().Be("hellooo");
@@ -780,7 +781,7 @@ function main()
         print(""main:"" + i);
     }
     doWork();
-}", fileToInclude.Object);
+}", settings, fileToInclude.Object);
 
             var run = script.Run();
             printer.PrintedMessages.Should().HaveCount(20);
