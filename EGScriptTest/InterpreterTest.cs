@@ -115,6 +115,13 @@ function test()
         }
 
         [TestMethod]
+        public void No_Main_Function_Consider_Entire_Script_A_Function()
+        {
+            var script = new Script(@"return ""hejje"";");
+            script.Run().As<StringObj>().Text.Should().Be("hejje");
+        }
+
+        [TestMethod]
         public void Addition_Assignment_Operator_Returns_Value_Added_By_Added_Amount()
         {
             var script = new Script(@"function main()

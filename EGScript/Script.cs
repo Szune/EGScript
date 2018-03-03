@@ -46,23 +46,27 @@ namespace EGScript
 
         public ScriptObject Run(bool throwExceptionOnError = true)
         {
+            if(throwExceptionOnError)
+                return Execute();
+
             try
             {
-
-                if (_interpreter != null) // if already compiled, just execute
-                    return _interpreter.Execute();
-
-                Compile();
-                return _interpreter.Execute();
+                return Execute();
             }
             catch (Exception ex)
             {
-                if (throwExceptionOnError)
-                    throw;
-
                 _settings?.Printer?.Print(ex.ToString());
                 return ObjectFactory.Null;
             }
+        }
+
+        private ScriptObject Execute()
+        {
+            if (_interpreter != null) // if already compiled, just execute
+                return _interpreter.Execute();
+
+            Compile();
+            return _interpreter.Execute();
         }
 
         private void Compile()

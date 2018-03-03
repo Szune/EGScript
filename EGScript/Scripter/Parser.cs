@@ -53,7 +53,13 @@ namespace EGScript.Scripter
                         Consume();
                         break;
                     default:
-                        throw new ParserException("Class definition or function declaration expected.", _lexer.Line, _lexer.Character);
+                        // no main function defined, wrap a main function around the script
+                        WrapMainFunctionAroundScript(functionDeclarations);
+                        break;
+                        //throw new ParserException("Class definition or function declaration expected.", _lexer.Line, _lexer.Character);
+                        // figure out a good way to handle this situation /\
+                        // should an exception be thrown or should this be accepted? (no main() function)
+                        // should it be possible to toggle this behaviour?
                 }
             }
             // TODO: Finish implementing classes
@@ -236,6 +242,17 @@ namespace EGScript.Scripter
                 functionDeclarations.Add(new ASTMemberFunction(name, baseClass, arguments, body));
             else
                 functionDeclarations.Add(new ASTGlobalFunction(name, arguments, body));
+        }
+
+        
+        private void WrapMainFunctionAroundScript(List<ASTFunctionBase> functionDeclarations)
+        {
+            List<ASTStatementBase> block = new List<ASTStatementBase>();
+            while (!Match(TokenType.END_OF_FILE))
+            {
+                block.Add(ParseStatement());
+            }
+            functionDeclarations.Add(new ASTGlobalFunction("main", new List<string>(), new ASTBlock(block)));
         }
 
         private ASTStatementBase ParseStatement()
