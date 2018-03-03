@@ -136,7 +136,7 @@ function test()
     var = 5;
     var += 6 += 6;
     return var;
-}");
+}").Run();
             script.Should().Throw<ParserException>();
         }
 
@@ -148,7 +148,7 @@ function test()
     var = 5;
     var -= 6 -= 6;
     return var;
-}");
+}").Run();
             script.Should().Throw<ParserException>();
         }
 

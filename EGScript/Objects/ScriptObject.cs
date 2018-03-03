@@ -13,11 +13,6 @@
 
     public abstract class ScriptObject
     {
-        public override int GetHashCode()
-        {
-            return (int) Type;
-        }
-
         public virtual ObjectType Type { get; }
         public string TypeName
         {

@@ -12,6 +12,76 @@ namespace EGScript
     /// </summary>
     public class Script
     {
+        private readonly string _code;
+        private readonly IFileHandler _fileHandler;
+        private readonly Random _rand;
+        private readonly ScriptEnvironment _environment; // environment contains the script (starting point = function main())
+        private Interpreter _interpreter; // interpreter runs the script
+        private readonly ScriptSettings _settings;
+
+        public Script(string code) : this(code, new FileHandler())
+        {
+
+        }
+
+        public Script(string code, ScriptSettings settings) : this(code, settings, new FileHandler())
+        {
+
+        }
+
+        public Script(string code, IFileHandler fileHandler)
+        {
+            _rand = new Random();
+            _environment = new ScriptEnvironment();
+            _code = code;
+            _settings = ScriptSettings.Default;
+            _fileHandler = fileHandler;
+
+        }
+
+        public Script(string code, ScriptSettings settings, IFileHandler fileHandler) : this(code, fileHandler)
+        {
+            _settings = settings;
+        }
+
+        public ScriptObject Run(bool throwExceptionOnError = true)
+        {
+            try
+            {
+
+                if (_interpreter != null) // if already compiled, just execute
+                    return _interpreter.Execute();
+
+                Compile();
+                return _interpreter.Execute();
+            }
+            catch (Exception ex)
+            {
+                if (throwExceptionOnError)
+                    throw;
+
+                _settings?.Printer?.Print(ex.ToString());
+                return ObjectFactory.Null;
+            }
+        }
+
+        private void Compile()
+        {
+            // compile script
+            var lexer = new Lexer(_code);
+            var parser = new Parser(lexer, _fileHandler);
+            var ast = parser.ParseScript();
+
+            ExportGeneralFunctions();
+            foreach (var func in _settings.Functions)
+            {
+                _environment.ExportFunction(func);
+            }
+
+            Compiler.Compile(_environment, ast);
+            _interpreter = new Interpreter(_environment);
+        }
+
         protected virtual ScriptObject Print(ScriptEnvironment env, Stack<ScriptObject> args)
         {
             _settings.Printer.Print(args.Pop().ToString());
@@ -31,16 +101,17 @@ namespace EGScript
                 case 2:
                 {
                     if (!args.Pop().TryGetNumber(out Number n1) || !args.Pop().TryGetNumber(out Number n2))
-                            throw new ScriptException("random() only works with numbers.");
-                        return new Number(_rand.Next((int)n1.Value, (int)n2.Value));
-                    }
+                        throw new ScriptException("random() only works with numbers.");
+                    return new Number(_rand.Next((int)n1.Value, (int)n2.Value));
+                }
+                default:
+                    return null;
             }
-            return null;
         }
 
         protected virtual ScriptObject Error(ScriptEnvironment env, Stack<ScriptObject> args)
         {
-            throw new ScriptException($"{args.Pop()}");
+            throw new ScriptException(args.Pop().ToString());
         }
 
         private void ExportGeneralFunctions()
@@ -48,77 +119,6 @@ namespace EGScript
             _environment.ExportFunction(new ExportedFunction("print", Print, (1, 1)));
             _environment.ExportFunction(new ExportedFunction("random", RandomNum, (1, 2)));
             _environment.ExportFunction(new ExportedFunction("error", Error, (1, 1)));
-        }
-
-        private readonly Random _rand;
-        private readonly ScriptEnvironment _environment; // environment contains the script (starting point = function main())
-        private readonly Interpreter _interpreter; // interpreter runs the script
-        private readonly ScriptSettings _settings;
-
-        public Script(string code) : this(code, new FileHandler())
-        {
-
-        }
-
-        public Script(string code, ScriptSettings settings) : this(code, settings, new FileHandler())
-        {
-
-        }
-
-        public Script(string code, IFileHandler fileHandler)
-        {
-            // later: get lexer and parser from object pool
-            // also get filehandler from object pool
-            _rand = new Random();
-            var lexer = new Lexer(code);
-            var parser = new Parser(lexer, fileHandler);
-            var ast = parser.ParseScript();
-            _environment = new ScriptEnvironment();
-            _settings = ScriptSettings.Default;
-            // export functions here
-            ExportGeneralFunctions();
-            Compiler.Compile(_environment, ast); // from here on, you can reuse "_environment" (ScriptEnvironment),
-                                                 // as an already compiled script (which will be important for performance later on,
-                                                 // and there's really no point in compiling the same script over and over again)
-            _interpreter = new Interpreter(_environment);
-        }
-
-        public Script(string code, ScriptSettings settings, IFileHandler fileHandler)
-        {
-            // later: get lexer and parser from object pool
-            // also get filehandler from object pool
-            _rand = new Random();
-            var lexer = new Lexer(code);
-            var parser = new Parser(lexer, fileHandler);
-            var ast = parser.ParseScript();
-            _environment = new ScriptEnvironment();
-            _settings = settings;
-
-            // export functions here
-            ExportGeneralFunctions();
-            foreach(var func in _settings.Functions)
-            {
-                _environment.ExportFunction(func);
-            }
-            Compiler.Compile(_environment, ast); // from here on, you can reuse "_environment" (ScriptEnvironment),
-                                                 // as an already compiled script (which will be important for performance later on,
-                                                 // and there's really no point in compiling the same script over and over again)
-            _interpreter = new Interpreter(_environment);
-        }
-
-        public ScriptObject Run(bool hideErrors = false)
-        {
-            if (!hideErrors)
-                return _interpreter.Execute();
-            try
-            {
-                return _interpreter.Execute();
-            }
-            catch(Exception ex)
-            {
-                _settings.Printer.Print(ex.ToString());
-                return ObjectFactory.Null;
-            }
         }
     }
 }
