@@ -1,26 +1,24 @@
-﻿using EGScript;
+﻿using System;
+using EGScript;
 using EGScript.Helpers;
 using EGScript.Objects;
 using EGScript.Scripter;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace EGScriptTest
 {
     [TestClass]
     public class InterpreterTest
     {
-        Settings settings;
+        ScriptSettings settings;
         TestPrinter printer => settings.Printer as TestPrinter;
 
         [TestInitialize]
         public void InitializeTest()
         {
-            settings = new Settings { Printer = new TestPrinter() };
+            settings = new ScriptSettings(new TestPrinter());
         }
 
         [TestMethod]
@@ -605,7 +603,7 @@ function main()
 }", settings);
             // fallthrough /\
             var run = script.Run();
-            printer.PrintedMessages.Should().BeEquivalentTo(new[] { "10", "10" });
+            printer.PrintedMessages.Should().BeEquivalentTo("10", "10");
         }
 
         [TestMethod]
@@ -624,9 +622,8 @@ function main()
             break;
     }
 }", settings);
-            // fallthrough /\
             var run = script.Run();
-            printer.PrintedMessages.Should().BeEquivalentTo(new[] { "15" });
+            printer.PrintedMessages.Should().BeEquivalentTo("15");
         }
 
         [TestMethod]
@@ -649,9 +646,8 @@ function main()
             }
     }
 }", settings);
-            // fallthrough /\
             var run = script.Run();
-            printer.PrintedMessages.Should().BeEquivalentTo(new[] { "17" });
+            printer.PrintedMessages.Should().BeEquivalentTo("17");
         }
 
         [TestMethod]
@@ -679,7 +675,6 @@ function main()
             var run = script.Run();
             run.As<Number>().Value.Should().Be(4);
         }
-
 
         [TestMethod]
         public void Table_Assignment_Only_Value_Should_Be_OKIDOKI()
@@ -734,7 +729,7 @@ function main()
     print(var2);
     print(var3);
 }", settings);
-            var run = script.Run();
+            script.Run();
             printer.PrintedMessages[0].Should().Be("3246");
             printer.PrintedMessages[1].Should().Be("hellooo");
             printer.PrintedMessages[2].Should().Be("50");
@@ -783,7 +778,7 @@ function main()
     doWork();
 }", settings, fileToInclude.Object);
 
-            var run = script.Run();
+            script.Run();
             printer.PrintedMessages.Should().HaveCount(20);
         }
 
@@ -832,6 +827,51 @@ function main()
 
             Action run = () => script.Run();
             run.Should().ThrowExactly<InterpreterException>();
+        }
+
+        [TestMethod]
+        public void Class_Members_Should_Be_Accessable()
+        {
+            var script = new Script(@"
+class test
+{
+    str;
+    function test()
+    {
+        str = ""hej"";
+    }
+}
+
+function main()
+{
+    var = new test();
+    return var->str;
+}");
+            script.Run().As<StringObj>().Text.Should().Be("hejva");
+        }
+
+        [TestMethod]
+        public void Class_Methods_Should_Be_Usable()
+        {
+            var script = new Script(@"
+class test
+{
+    function test()
+    {
+    }
+
+    function doStuff()
+    {
+        return 5+5;
+    }
+}
+
+function main()
+{
+    var = new test();
+    return var->doStuff();
+}");
+            script.Run().As<Number>().Value.Should().Be(10);
         }
     }
 }

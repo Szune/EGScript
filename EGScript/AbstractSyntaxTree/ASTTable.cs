@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using EGScript.Objects;
 using EGScript.Scripter;
 
@@ -34,33 +30,31 @@ namespace EGScript.AbstractSyntaxTree
                 AutoIntegerValues.Add(AutoIntegerValues.Count, new ASTTableElement(AutoIntegerValues.Count, value));
                 return true;
             }
-            else
+
+            if (key.Type == ExpressionType.NUMBER)
             {
-                if (key.Type == ExpressionType.NUMBER)
-                {
-                    var numberKey = key as ASTNumber;
-                    if (IntegerValues.ContainsKey((int)numberKey.Value)) // TODO: Do something to stop this from possibly crashing.. someday. (double to int cast)
-                        return false;
-                    IntegerValues.Add((int)numberKey.Value, new ASTTableElement((int)numberKey.Value, value));
-                }
-                else if (key.Type == ExpressionType.STRING)
-                {
-                    var stringKey = key as ASTString;
-                    if (StringValues.ContainsKey(stringKey.Text))
-                        return false;
-                    StringValues.Add(stringKey.Text, new ASTTableElement(stringKey.Text,value));
-                }
-                else if (key.Type == ExpressionType.IDENTIFIER)
-                {
-                    var identifierKey = key as ASTIdentifier;
-                    if (StringValues.ContainsKey(identifierKey.Name))
-                        return false;
-                    StringValues.Add(identifierKey.Name, new ASTTableElement(identifierKey.Name, value));
-                }
-                else
+                var numberKey = key as ASTNumber;
+                if (IntegerValues.ContainsKey((int)numberKey.Value)) // TODO: Do something to stop this from possibly crashing.. someday. (double to int cast)
                     return false;
-                return true;
+                IntegerValues.Add((int)numberKey.Value, new ASTTableElement((int)numberKey.Value, value));
             }
+            else if (key.Type == ExpressionType.STRING)
+            {
+                var stringKey = key as ASTString;
+                if (StringValues.ContainsKey(stringKey.Text))
+                    return false;
+                StringValues.Add(stringKey.Text, new ASTTableElement(stringKey.Text,value));
+            }
+            else if (key.Type == ExpressionType.IDENTIFIER)
+            {
+                var identifierKey = key as ASTIdentifier;
+                if (StringValues.ContainsKey(identifierKey.Name))
+                    return false;
+                StringValues.Add(identifierKey.Name, new ASTTableElement(identifierKey.Name, value));
+            }
+            else
+                return false;
+            return true;
         }
 
         /// <summary>
@@ -70,7 +64,7 @@ namespace EGScript.AbstractSyntaxTree
         {
             for(int autoInt = 0; autoInt < AutoIntegerValues.Count; autoInt++)
             {
-                for(int i = 0; true; i++)
+                for(int i = 0;; i++)
                 {
                     if(!IntegerValues.ContainsKey(i))
                     {

@@ -1,9 +1,6 @@
-﻿using EGScript.Scripter;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EGScript.Scripter;
 
 namespace EGScript.Objects
 {
@@ -12,7 +9,7 @@ namespace EGScript.Objects
         public string Name { get; }
         public Class Base { get; } 
         public Scope Scope { get; }
-        private List<Function> Functions;
+        private List<Function> Functions { get; }
 
         public Class(string name)
         {

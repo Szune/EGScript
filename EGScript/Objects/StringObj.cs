@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EGScript.Objects
+﻿namespace EGScript.Objects
 {
     public class StringObj : ScriptObject
     {
@@ -31,11 +25,11 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return n == str;
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 return (str.Text.CompareTo(s.Text) == 0);
-            else if (other.TryGetFalse(out False f) || other.TryGetNull(out Null nul))
+            if (other.TryGetFalse(out False f) || other.TryGetNull(out Null nul))
                 return false;
-            else if (other.TryGetTrue(out True t))
+            if (other.TryGetTrue(out True t))
                 return true;
 
             throw new OperatorException("==", str.ToString(), ObjectType.STRING, other);
@@ -50,7 +44,7 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return n > str;
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 return str.Text.CompareTo(s.Text) < 0; // TODO: Possibly remove / adjust this
 
             throw new OperatorException("<", str.ToString(), ObjectType.STRING, other);
@@ -60,7 +54,7 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return n < str;
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 return str.Text.CompareTo(s.Text) > 0; // TODO: Possibly remove / adjust this
 
             throw new OperatorException(">", str.ToString(), ObjectType.STRING, other);
@@ -70,7 +64,7 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return (n >= str);
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 return str.Text.CompareTo(s.Text) <= 0; // TODO: Possibly remove / adjust this
 
             throw new OperatorException("<=", str.ToString(), ObjectType.STRING, other);

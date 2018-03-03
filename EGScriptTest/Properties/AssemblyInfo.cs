@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("EGScriptTest")]
@@ -16,5 +15,5 @@ using System.Runtime.InteropServices;
 [assembly: Guid("50a5db1f-483f-4b29-af0e-506d162ebde9")]
 
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2017.11.26.1537")]
-[assembly: AssemblyFileVersion("2017.11.26.1537")]
+[assembly: AssemblyVersion("2017.11.27.1626")]
+[assembly: AssemblyFileVersion("2017.11.27.1626")]

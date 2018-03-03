@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using EGScript.AbstractSyntaxTree;
 using EGScript.Objects;
 using EGScript.OperationCodes;
@@ -8,17 +7,17 @@ namespace EGScript.Scripter
 {
     public class Compiler : IVisitor
     {
-        private ScriptEnvironment _environment { get; }
-        private const uint BREAK = 0xFAABFACE;
-        private const uint CONTINUE = 0xFAABBABE;
-        private const uint BRANCH_TO_CODE_BLOCK = 0xFAABDAAD;
-        public const uint REFERENCE_TABLE_INDEX = 0xDEADFAAB;
-        private Stack<ASTFunctionCall> _definedFunctions;
+        private readonly ScriptEnvironment _environment;
+        private const uint Break = 0xFAABFACE;
+        private const uint Continue = 0xFAABBABE;
+        private const uint BranchToCodeBlock = 0xFAABDAAD;
+        public const uint ReferenceTableIndex = 0xDEADFAAB;
+        private Stack<ASTFunctionCall> CalledFunctions { get; }
 
         private Compiler(ScriptEnvironment environment)
         {
             _environment = environment;
-            _definedFunctions = new Stack<ASTFunctionCall>();
+            CalledFunctions = new Stack<ASTFunctionCall>();
         }
 
         public static void Compile(ScriptEnvironment environment, AST ast)
@@ -43,9 +42,9 @@ namespace EGScript.Scripter
 
         private void VerifyThatCalledFunctionsExist()
         {
-            for (int i = 0; i < _definedFunctions.Count; i++)
+            for (int i = 0; i < CalledFunctions.Count; i++)
             {
-                var func = _definedFunctions.Pop();
+                var func = CalledFunctions.Pop();
                 var callFunction = _environment.FindFunction(func.Name);
                 if (callFunction == null)
                     throw new CompilerException($"Function '{func.Name}' has not been defined.");
@@ -73,7 +72,7 @@ namespace EGScript.Scripter
             }
 
             _environment.AddClass(newClass);
-            List<ASTMemberDefinition> memberDefinitions = _class.MemberDefinitions;
+            var memberDefinitions = _class.MemberDefinitions;
 
             for(int i = 0; i < memberDefinitions.Count; i++)
             {
@@ -138,6 +137,14 @@ namespace EGScript.Scripter
         public void Visit(ASTFunctionDefinition functionDefinition, Class _class)
         {
             var func = ObjectFactory.Function(functionDefinition.Name, functionDefinition.Arguments);
+            if (functionDefinition.Body != null)
+            {
+                functionDefinition.Body.Accept(this, func);
+
+                // return null if script doesn't explicitly return something
+                func.Code.Write(OpCodeFactory.Push(ObjectFactory.Null));
+                func.Code.Write(OpCodeFactory.Return);
+            }
             _class.AddFunction(func);
         }
 
@@ -192,9 +199,9 @@ namespace EGScript.Scripter
             for(int i = condition; i < end; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK) // break, jump to end
+                if (instruction is Branch breakBranch && breakBranch.Argument == Break) // break, jump to end
                     breakBranch.Argument = (uint)end;
-                else if (instruction is Branch continueBranch && continueBranch.Argument == CONTINUE) // continue, jump to condition
+                else if (instruction is Branch continueBranch && continueBranch.Argument == Continue) // continue, jump to condition
                     continueBranch.Argument = (uint)condition;
             }
         }
@@ -231,9 +238,9 @@ namespace EGScript.Scripter
             for(int i = condition; i < end; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK)
+                if (instruction is Branch breakBranch && breakBranch.Argument == Break)
                     breakBranch.Argument = (uint)end;
-                else if (instruction is Branch continueBranch && continueBranch.Argument == CONTINUE)
+                else if (instruction is Branch continueBranch && continueBranch.Argument == Continue)
                     continueBranch.Argument = (uint)increment;
             }
         }
@@ -258,7 +265,7 @@ namespace EGScript.Scripter
                     switchStatement.Cases[i].expression.Accept(this, function); // evaluate the comparison expression
                     function.Code.Write(OpCodeFactory.Reference(switchObject)); // reference our switch variable
                     function.Code.Write(OpCodeFactory.EqualsEquals); // compare them
-                    function.Code.Write(OpCodeFactory.BranchIfTrue(BRANCH_TO_CODE_BLOCK)); // bramch if true to the actual code block
+                    function.Code.Write(OpCodeFactory.BranchIfTrue(BranchToCodeBlock)); // bramch if true to the actual code block
                 }
             }
 
@@ -274,7 +281,7 @@ namespace EGScript.Scripter
                 for(int j = startOfJumpTable; j < endOfJumpTable; j++)
                 {
                     var instruction = function.Code[j];
-                    if(instruction is BranchIfTrue branchToBlock && branchToBlock.Argument == BRANCH_TO_CODE_BLOCK)
+                    if(instruction is BranchIfTrue branchToBlock && branchToBlock.Argument == BranchToCodeBlock)
                     {
                         branchToBlock.Argument = (uint) function.Code.Count;
                         break;
@@ -299,19 +306,19 @@ namespace EGScript.Scripter
             for(int i = startBlocks; i < endBlocks; i++)
             {
                 var instruction = function.Code[i];
-                if (instruction is Branch breakBranch && breakBranch.Argument == BREAK) // break, jump to end
+                if (instruction is Branch breakBranch && breakBranch.Argument == Break) // break, jump to end
                     breakBranch.Argument = (uint)endBlocks;
             }
         }
 
         public void Visit(ASTBreak astBreak, Function function)
         {
-            function.Code.Write(OpCodeFactory.Branch(BREAK));
+            function.Code.Write(OpCodeFactory.Branch(Break));
         }
 
         public void Visit(ASTContinue astContinue, Function function)
         {
-            function.Code.Write(OpCodeFactory.Branch(CONTINUE));
+            function.Code.Write(OpCodeFactory.Branch(Continue));
         }
 
         public void Visit(ASTReturn returnStatement, Function function)
@@ -493,7 +500,7 @@ namespace EGScript.Scripter
             }
             else
             {
-                _definedFunctions.Push(expression);
+                CalledFunctions.Push(expression);
                 // Old way to check if a function exists (where functions have to be defined in a first->last order depending on their usage)
                 //var callFunction = _environment.FindFunction(expression.Name);
                 //if (callFunction == null)
@@ -581,7 +588,7 @@ namespace EGScript.Scripter
                 // PUSH object at the table index
                 astTableGet.TableIndexes[0].Accept(this, function); // push the index of the item to return
                 function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(1))); // push the amount of indexes we are getting
-                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), REFERENCE_TABLE_INDEX));// reference the table
+                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), ReferenceTableIndex));// reference the table
             }
             else
             {
@@ -589,7 +596,7 @@ namespace EGScript.Scripter
                     astTableGet.TableIndexes[i].Accept(this, function);
 
                 function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(astTableGet.TableIndexes.Count))); // push the amount of indexes
-                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), REFERENCE_TABLE_INDEX)); // reference the table
+                function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(identifier.Name), ReferenceTableIndex)); // reference the table
             }
         }
 

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EGScript.Scripter;
 using EGScript.Objects;
+using EGScript.Scripter;
 
 namespace EGScript.OperationCodes
 {
@@ -34,7 +31,7 @@ namespace EGScript.OperationCodes
 
             // check for global vars
             var arg = state.Environment.Globals.Scope.Find(s.Text);
-            if (arg != null && Argument != Compiler.REFERENCE_TABLE_INDEX)
+            if (arg != null && Argument != Compiler.ReferenceTableIndex)
             {
                 state.Stack.Push(arg);
                 return;
@@ -42,7 +39,7 @@ namespace EGScript.OperationCodes
 
             // check for local vars
             arg = state.Scopes.Peek().Find(s.Text);
-            if (Argument != Compiler.REFERENCE_TABLE_INDEX)
+            if (Argument != Compiler.ReferenceTableIndex)
             { 
                 state.Stack.Push(arg);
                 return;

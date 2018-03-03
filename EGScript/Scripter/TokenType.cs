@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EGScript.Scripter
+﻿namespace EGScript.Scripter
 {
     /// <summary>
     /// The type of token (identifier, operator, bracket, etc).

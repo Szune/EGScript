@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Globalization;
 
 namespace EGScript.Objects
 {
@@ -32,14 +27,14 @@ namespace EGScript.Objects
             if(other.TryGetNumber(out Number n))
                 return number.Value == n.Value;
 
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 if (IsStringDouble(s.Text, out double val))
                     return number.Value == val;
                 else
                     return false;
-            else if (other.TryGetFalse(out False f) || other.TryGetNull(out Null nul))
+            if (other.TryGetFalse(out False f) || other.TryGetNull(out Null nul))
                 return number.Value == 0;
-            else if (other.TryGetTrue(out True t))
+            if (other.TryGetTrue(out True t))
                 return number.Value != 0;
 
             throw new OperatorException("==", number.ToString(), ObjectType.NUMBER, other);
@@ -54,7 +49,7 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return number.Value < n.Value;
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 if (IsStringDouble(s.Text, out double val))
                     return number.Value < val;
                 else
@@ -66,7 +61,7 @@ namespace EGScript.Objects
         {
             if (other.TryGetNumber(out Number n))
                 return number.Value > n.Value;
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 if (IsStringDouble(s.Text, out double val))
                     return number.Value > val;
                 else
@@ -79,7 +74,7 @@ namespace EGScript.Objects
             if (other.TryGetNumber(out Number n))
                 return number.Value <= n.Value;
 
-            else if (other.TryGetString(out StringObj s))
+            if (other.TryGetString(out StringObj s))
                 if (IsStringDouble(s.Text, out double val))
                     return number.Value <= val;
                 else

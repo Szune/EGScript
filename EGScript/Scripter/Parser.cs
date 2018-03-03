@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EGScript.AbstractSyntaxTree;
 using EGScript.Helpers;
-using System.IO;
 
 namespace EGScript.Scripter
 {
@@ -107,11 +105,13 @@ namespace EGScript.Scripter
 
         private void DeclareClass(List<ASTClassDefinition> classDeclarations)
         {
+            // class *identifier*
             var name = Require(TokenType.IDENTIFIER).Text;
             var baseClass = "";
 
             if (Match(TokenType.COLON))
             {
+                // class *identifier* : *identifier*
                 Consume();
                 baseClass = Require(TokenType.IDENTIFIER).Text;
             }
@@ -139,12 +139,13 @@ namespace EGScript.Scripter
 
         private void DeclareMemberDefinition(List<ASTMemberDefinition> memberDefinitions)
         {
-            var name = Require(TokenType.IDENTIFIER).Text;
-
-            if(Match(TokenType.LEFT_PARENTHESIS))
+            //var name = Require(TokenType.IDENTIFIER).Text;
+            if(Match(TokenType.FUNCTION))
             {
                 Consume();
-                List<string> arguments = new List<string>();
+                var name = Require(TokenType.IDENTIFIER).Text;
+                Require(TokenType.LEFT_PARENTHESIS);
+                var arguments = new List<string>();
 
                 while(!Match(TokenType.RIGHT_PARENTHESIS))
                 {
@@ -153,20 +154,38 @@ namespace EGScript.Scripter
                     if(Match(TokenType.COMMA))
                     {
                         Consume();
-                        if (!Match(TokenType.IDENTIFIER))
+                        if(!Match(TokenType.IDENTIFIER))
                             throw new ParserException("Argument name expected after comma.", _lexer.Line, _lexer.Character);
                     }
                 }
 
                 Require(TokenType.RIGHT_PARENTHESIS);
-                Require(TokenType.SEMICOLON);
-                memberDefinitions.Add(new ASTFunctionDefinition(name, arguments));
+
+                var body = ParseBlock();
+
+                memberDefinitions.Add(new ASTFunctionDefinition(name, arguments, body));
             }
+            //else
+            //{
+            //    //var variable = ParseExpression();
+            //    //if (variable is ASTAssignment assignment && assignment.Type == ExpressionType.ASSIGNMENT)
+            //    //{
+            //    //    memberDefinitions.Add(new ASTAssignedVariableDefinition(assignment.Variable, assignment.Expression));
+            //    //}
+            //    //else if (variable is ASTIdentifier identifier)
+            //    //{
+            //    //    memberDefinitions.Add(new ASTVariableDefinition(identifier.Name));
+            //    //}
+            //    //else
+            //    //    throw new ParserException($"Variable definition expected.", _lexer.Line, _lexer.Character);
+            //}
             else
             {
+                var name = Require(TokenType.IDENTIFIER).Text;
+                // declare class variable
                 memberDefinitions.Add(new ASTVariableDefinition(name));
 
-                while(Match(TokenType.COMMA))
+                while (Match(TokenType.COMMA))
                 {
                     Consume();
                     name = Require(TokenType.IDENTIFIER).Text;
@@ -283,8 +302,7 @@ namespace EGScript.Scripter
 
             if (elsePart == null)
                 return new ASTIf(condition, ifPart);
-            else
-                return new ASTIf(condition, ifPart, elsePart);
+            return new ASTIf(condition, ifPart, elsePart);
         }
 
 
@@ -832,7 +850,14 @@ namespace EGScript.Scripter
                             if(expression.Type != ExpressionType.IDENTIFIER)
                                 throw new ParserException($"class object expected.", _lexer.Line, _lexer.Character);
 
-                            string functionName = Require(TokenType.IDENTIFIER).Text;
+                            string memberName = Require(TokenType.IDENTIFIER).Text;
+
+                            if(!Match(TokenType.LEFT_PARENTHESIS))
+                            {
+                                // return class variable
+                                expression = new ASTIdentifier(memberName);
+                                break;
+                            }
 
                             Require(TokenType.LEFT_PARENTHESIS);
                             List<ASTExpressionBase> arguments = new List<ASTExpressionBase>();
@@ -847,7 +872,7 @@ namespace EGScript.Scripter
 
                             Require(TokenType.RIGHT_PARENTHESIS);
 
-                            expression = new ASTMemberFunctionCall(functionName, (expression as ASTIdentifier).Name, arguments);
+                            expression = new ASTMemberFunctionCall(memberName, (expression as ASTIdentifier).Name, arguments);
                         }
                         break;
                 }
@@ -991,8 +1016,7 @@ namespace EGScript.Scripter
         {
             if (_buffer[0].Type != type)
                 throw new ParserException($"Unexpected token '{Token.TypeToString(_buffer[0].Type)}', expected '{Token.TypeToString(type)}'.", _lexer.Line, _lexer.Character);
-            else
-                return Consume();
+            return Consume();
         }
 
         [Obsolete("Not sure if this should ever be used!")]
@@ -1000,9 +1024,8 @@ namespace EGScript.Scripter
         {
             if (!allowedTokenTypes.Contains(_buffer[0].Type))
                 throw new ParserException($"Unexpected token '{Token.TypeToString(_buffer[0].Type)}', expected any of '{string.Join(", ", allowedTokenTypes.Select(_ => Token.TypeToString(_)))}'.", _lexer.Line, _lexer.Character);
-            else
-                return Consume();
-            
+            return Consume();
+
         }
     }
 }

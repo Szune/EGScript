@@ -1,10 +1,6 @@
-﻿using EGScript.Objects;
+﻿using System.Collections.Generic;
+using EGScript.Objects;
 using EGScript.OperationCodes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EGScript.Scripter
 {
@@ -53,12 +49,8 @@ namespace EGScript.Scripter
 
                 instruction.Execute(state);
 
-                if (instruction is Return ret) // check if instruction was a return instruction
-                {
-                    if (!ret.ScriptExecutionFinished) continue; // check if it's returning from main()
-
+                if (instruction is Return ret && ret.ScriptExecutionFinished) // check if instruction was a return instruction
                     return ret.ReturnObject; // return usable object
-                }
             }
 
             return ObjectFactory.Null;

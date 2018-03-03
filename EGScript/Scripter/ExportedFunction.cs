@@ -1,9 +1,6 @@
-﻿using EGScript.Objects;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using EGScript.Objects;
 
 namespace EGScript.Scripter
 {
@@ -12,12 +9,10 @@ namespace EGScript.Scripter
     /// </summary>
     public class ExportedFunction
     {
-        public delegate ScriptObject EFunc(ScriptEnvironment environment, List<ScriptObject> arguments);
-
         /// <summary>
         /// Gets the delegate to call the exported function with.
         /// </summary>
-        public EFunc Call { get; }
+        public Func<ScriptEnvironment, Stack<ScriptObject>, ScriptObject> Call { get; }
         /// <summary>
         /// Gets the required amount of parameters to call the exported function.
         /// </summary>
@@ -26,17 +21,17 @@ namespace EGScript.Scripter
         /// <summary>
         /// Gets the name used when calling the function.
         /// </summary>
-        public string CallingName { get; }
+        public string FunctionName { get; }
 
         /// <summary>
         /// Creates a new instance.
         /// </summary>
-        /// <param name="callingName">The name used when calling the function.</param>
+        /// <param name="functionName">The name used when calling the function.</param>
         /// <param name="functionToExport">The function to export.</param>
         /// <param name="numberOfArguments">The required amount of parameters to call the exported function.</param>
-        public ExportedFunction(string callingName, EFunc functionToExport, (int min, int max) numberOfArguments)
+        public ExportedFunction(string functionName, Func<ScriptEnvironment, Stack<ScriptObject>, ScriptObject> functionToExport, (int min, int max) numberOfArguments)
         {
-            CallingName = callingName;
+            FunctionName = functionName;
             Call = functionToExport;
             ArgumentCount = numberOfArguments;
         }

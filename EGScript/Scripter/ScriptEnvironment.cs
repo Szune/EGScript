@@ -1,11 +1,7 @@
-﻿using EGScript.AbstractSyntaxTree;
+﻿using System.Collections.Generic;
+using System.Linq;
 using EGScript.Objects;
 using EGScript.OperationCodes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EGScript.Scripter
 {
@@ -56,25 +52,11 @@ namespace EGScript.Scripter
         /// <summary>
         /// Go to the definition of this method to find out how exporting a C# method to the script language works.
         /// </summary>
-        /// <param name="name"></param>
         /// <param name="exportedFunction"></param>
         public void ExportFunction(ExportedFunction exportedFunction)
         {
-            /*
-            > Define function in C#:
-            public ScriptObject Print(ScriptEnvironment environment, List<ScriptObject> arguments)
-            {
-                if (arguments.Count != 1)
-                    throw new Exception("NEEDS ONLY 1 ARGUMENT");
-                Console.WriteLine(arguments[0].ToString());
-                return null;
-            }
 
-            > Export it:
-            ScriptEnvironment.ExportFunction("print", Print);
-            */
-
-            exportedFunctions.Add(exportedFunction.CallingName, exportedFunction);
+            exportedFunctions.Add(exportedFunction.FunctionName, exportedFunction);
         }
 
         public Class FindClass(string name)

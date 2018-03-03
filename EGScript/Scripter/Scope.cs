@@ -1,5 +1,5 @@
-﻿using EGScript.Objects;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using EGScript.Objects;
 
 namespace EGScript.Scripter
 {
@@ -75,12 +75,10 @@ namespace EGScript.Scripter
             {
                 return vari;
             }
-            else
-            {
-                if(_parent != null)
-                    return _parent.Find(name);
-                return null;
-            }
+
+            if(_parent != null)
+                return _parent.Find(name);
+            return null;
         }
 
 

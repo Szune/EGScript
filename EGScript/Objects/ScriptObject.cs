@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EGScript.Objects
+﻿namespace EGScript.Objects
 {
     public enum ObjectType
     {
@@ -19,6 +13,11 @@ namespace EGScript.Objects
 
     public abstract class ScriptObject
     {
+        public override int GetHashCode()
+        {
+            return (int) Type;
+        }
+
         public virtual ObjectType Type { get; }
         public string TypeName
         {
@@ -43,8 +42,8 @@ namespace EGScript.Objects
         public static bool operator ==(ScriptObject left, ScriptObject right)
         {
             if ((object)left == null && (object)right == null) return true;
-            else if (left == (object)null) return false;
-            else if (right == (object)null) return false;
+            if (left == (object)null) return false;
+            if (right == (object)null) return false;
             // TODO: Refactor?
             switch(left.Type)
             {

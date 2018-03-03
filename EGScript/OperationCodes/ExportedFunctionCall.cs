@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EGScript.Scripter;
+﻿using System.Collections.Generic;
 using EGScript.Objects;
+using EGScript.Scripter;
 
 namespace EGScript.OperationCodes
 {
@@ -25,10 +21,10 @@ namespace EGScript.OperationCodes
             double numArgs = n.Value;
             state.Stack.Pop();
 
-            var args = new List<ScriptObject>();
+            var args = new Stack<ScriptObject>();
             for (int i = 0; i < numArgs; i++)
             {
-                args.Add(state.Stack.Peek()); // What's the reason for not just using _stack.Pop() in the call to args.Add()? Am I too tired to reason well or is this unnecessary?
+                args.Push(state.Stack.Peek()); // What's the reason for not just using _stack.Pop() in the call to args.Add()? Am I too tired to reason well or is this unnecessary?
                 state.Stack.Pop();
             }
 

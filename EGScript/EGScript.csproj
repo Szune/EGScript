@@ -82,9 +82,10 @@
     <Compile Include="AbstractSyntaxTree\ASTWhile.cs" />
     <Compile Include="AbstractSyntaxTree\ExpressionType.cs" />
     <Compile Include="AbstractSyntaxTree\IVisitable.cs" />
+    <Compile Include="ToScriptObjectExtensions.cs" />
     <Compile Include="Helpers\ConsolePrinter.cs" />
     <Compile Include="Helpers\IPrinter.cs" />
-    <Compile Include="Objects\ObjectFactory.cs" />
+    <Compile Include="ObjectFactory.cs" />
     <Compile Include="OperationCodes\Add.cs" />
     <Compile Include="OperationCodes\And.cs" />
     <Compile Include="OperationCodes\Branch.cs" />
@@ -155,7 +156,7 @@
     <Compile Include="Scripter\ScriptException.cs" />
     <Compile Include="Scripter\Token.cs" />
     <Compile Include="Scripter\TokenType.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="ScriptSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

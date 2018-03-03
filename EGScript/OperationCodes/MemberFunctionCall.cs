@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using EGScript.Objects;
 using EGScript.Scripter;
-using EGScript.Objects;
 
 namespace EGScript.OperationCodes
 {
@@ -40,7 +35,7 @@ namespace EGScript.OperationCodes
             if (callFunction == null)
                 throw new InterpreterException($"Class '{_class.Name}' does not define function '{s.Text}'.");
 
-            state.Frames.Push(new CallFrame(callFunction));
+            state.Frames.Push(new CallFrame(callFunction, instance.As<Instance>()));
             callFunction.Scope.Reset();
             callFunction.Scope.SetParent(_class.Scope);
             state.Scopes.Push(callFunction.Scope);

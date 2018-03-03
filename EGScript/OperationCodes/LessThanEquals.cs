@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EGScript.Scripter;
-using EGScript.Objects;
+﻿using EGScript.Scripter;
 
 namespace EGScript.OperationCodes
 {
