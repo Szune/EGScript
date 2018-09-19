@@ -55,7 +55,7 @@ namespace EGScript
             }
             catch (Exception ex)
             {
-                _settings?.Printer?.Print(ex.ToString());
+                _settings?.Printer?.PrintException("Script encountered an exception", ex);
                 return ObjectFactory.Null;
             }
         }

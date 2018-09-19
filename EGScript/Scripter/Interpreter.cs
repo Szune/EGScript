@@ -6,10 +6,10 @@ namespace EGScript.Scripter
 {
     public class Interpreter
     {
-        private ScriptEnvironment _environment;
-        private Stack<CallFrame> _frames;
-        private Stack<ScriptObject> _stack;
-        private Stack<Scope> _scopes;
+        private readonly ScriptEnvironment _environment;
+        private readonly Stack<CallFrame> _frames;
+        private readonly Stack<ScriptObject> _stack;
+        private readonly Stack<Scope> _scopes;
 
         public Interpreter(ScriptEnvironment environment)
         {

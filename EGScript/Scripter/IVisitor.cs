@@ -22,6 +22,9 @@ namespace EGScript.Scripter
         void Visit(ASTCount astCount, Function function);
         void Visit(ASTGlobalFunctionCall astGlobalFunctionCall, Function function);
         void Visit(ASTMemberFunctionCall astMemberFunctionCall, Function function);
+        void Visit(ASTMemberAssignmentInstance astMemberAssignmentInstance, Function function);
+        void Visit(ASTMemberAssignment astMemberAssignment, Function function);
+        void Visit(ASTMemberAccess astMemberAccess, Function function);
         void Visit(ASTNew astNew, Function function);
         void Visit(ASTNumber astNumber, Function function);
         void Visit(ASTNull astNull, Function function);

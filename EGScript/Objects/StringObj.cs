@@ -23,6 +23,10 @@
 
         public static bool operator ==(StringObj str, ScriptObject other)
         {
+            if((object)str == null && (object)other == null)
+                return true;
+            if ((object) str == null || (object) other == null)
+                return false;
             if (other.TryGetNumber(out Number n))
                 return n == str;
             if (other.TryGetString(out StringObj s))

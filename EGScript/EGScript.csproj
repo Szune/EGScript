@@ -12,6 +12,10 @@
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -62,6 +66,9 @@
     <Compile Include="AbstractSyntaxTree\ASTGlobalVariableAssignment.cs" />
     <Compile Include="AbstractSyntaxTree\ASTIdentifier.cs" />
     <Compile Include="AbstractSyntaxTree\ASTIf.cs" />
+    <Compile Include="AbstractSyntaxTree\ASTMemberAccess.cs" />
+    <Compile Include="AbstractSyntaxTree\ASTMemberAssignment.cs" />
+    <Compile Include="AbstractSyntaxTree\ASTMemberAssignmentInstance.cs" />
     <Compile Include="AbstractSyntaxTree\ASTMemberDefinition.cs" />
     <Compile Include="AbstractSyntaxTree\ASTMemberFunction.cs" />
     <Compile Include="AbstractSyntaxTree\ASTMemberFunctionCall.cs" />
@@ -82,6 +89,8 @@
     <Compile Include="AbstractSyntaxTree\ASTWhile.cs" />
     <Compile Include="AbstractSyntaxTree\ExpressionType.cs" />
     <Compile Include="AbstractSyntaxTree\IVisitable.cs" />
+    <Compile Include="OperationCodes\MemberAccess.cs" />
+    <Compile Include="OperationCodes\SetMember.cs" />
     <Compile Include="ToScriptObjectExtensions.cs" />
     <Compile Include="Helpers\ConsolePrinter.cs" />
     <Compile Include="Helpers\IPrinter.cs" />

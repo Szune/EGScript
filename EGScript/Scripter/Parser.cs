@@ -14,6 +14,7 @@ namespace EGScript.Scripter
         private int _loopLevel;
         private int _switchLevel;
         private readonly IFileHandler _fileHandler;
+        private bool _insideClass;
 
         public Parser(Lexer lexer, IFileHandler fileHandler)
         {
@@ -166,9 +167,9 @@ namespace EGScript.Scripter
                 }
 
                 Require(TokenType.RIGHT_PARENTHESIS);
-
+                _insideClass = true;
                 var body = ParseBlock();
-
+                _insideClass = false;
                 memberDefinitions.Add(new ASTFunctionDefinition(name, arguments, body));
             }
             //else
@@ -516,35 +517,35 @@ namespace EGScript.Scripter
                         {
                             Consume();
                             ASTExpressionBase expressionRight = ParseExpression1();
-                            expression = new ASTAssignment(ASTAssignment.AssignmentType.ASSIGNMENT, (expression as ASTIdentifier).Name, expressionRight);
+                            expression = GetASTAssignment(ASTAssignment.AssignmentType.ASSIGNMENT, (expression as ASTIdentifier).Name, expressionRight, expression as ASTMemberAccess);
                         }
                         break;
                     case TokenType.PLUS_EQUALS:
                         {
                             Consume();
                             ASTExpressionBase expressionRight = ParseExpression1();
-                            expression = new ASTAssignment(ASTAssignment.AssignmentType.ADDITION, (expression as ASTIdentifier).Name, expressionRight);
+                            expression = GetASTAssignment(ASTAssignment.AssignmentType.ADDITION, (expression as ASTIdentifier).Name, expressionRight, expression as ASTMemberAccess);
                         }
                         break;
                     case TokenType.MINUS_EQUALS:
                         {
                             Consume();
                             ASTExpressionBase expressionRight = ParseExpression1();
-                            expression = new ASTAssignment(ASTAssignment.AssignmentType.SUBTRACTION, (expression as ASTIdentifier).Name, expressionRight);
+                            expression = GetASTAssignment(ASTAssignment.AssignmentType.SUBTRACTION, (expression as ASTIdentifier).Name, expressionRight, expression as ASTMemberAccess);
                         }
                         break;
                     case TokenType.TIMES_EQUALS:
                         {
                             Consume();
                             ASTExpressionBase expressionRight = ParseExpression1();
-                            expression = new ASTAssignment(ASTAssignment.AssignmentType.MULTIPLICATION, (expression as ASTIdentifier).Name, expressionRight);
+                            expression = GetASTAssignment(ASTAssignment.AssignmentType.MULTIPLICATION, (expression as ASTIdentifier).Name, expressionRight, expression as ASTMemberAccess);
                         }
                         break;
                     case TokenType.DIVIDE_EQUALS:
                         {
                             Consume();
                             ASTExpressionBase expressionRight = ParseExpression1();
-                            expression = new ASTAssignment(ASTAssignment.AssignmentType.DIVISION, (expression as ASTIdentifier).Name, expressionRight);
+                            expression = GetASTAssignment(ASTAssignment.AssignmentType.DIVISION, (expression as ASTIdentifier).Name, expressionRight, expression as ASTMemberAccess);
                         }
                         break;
                         
@@ -552,6 +553,29 @@ namespace EGScript.Scripter
             }
 
             return expression;
+        }
+
+        private ASTAssignment GetASTAssignment(ASTAssignment.AssignmentType type, string variable,
+            ASTExpressionBase expression, ASTMemberAccess memberAccess)
+        {
+            if (!_insideClass)
+            {
+                if (memberAccess != null)
+                {
+                    // assigning a member variable from outside the class
+                    return new ASTMemberAssignmentInstance(type, variable, expression, memberAccess.InstanceName);
+                }
+                else
+                {
+                    // assigning a local variable
+                    return new ASTAssignment(type, variable, expression);
+                }
+            }
+            else
+            {
+                // assigning a member variable from inside the class
+                return new ASTMemberAssignment(type, variable, expression);
+            }
         }
 
         /// <summary>
@@ -872,7 +896,7 @@ namespace EGScript.Scripter
                             if(!Match(TokenType.LEFT_PARENTHESIS))
                             {
                                 // return class variable
-                                expression = new ASTIdentifier(memberName);
+                                expression = new ASTMemberAccess(memberName, (expression as ASTIdentifier).Name);
                                 break;
                             }
 

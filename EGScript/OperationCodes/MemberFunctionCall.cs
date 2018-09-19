@@ -7,10 +7,10 @@ namespace EGScript.OperationCodes
     {
         public MemberFunctionCall(ScriptObject functionName)
         {
-            FunctionName = functionName;
+            _functionName = functionName;
         }
 
-        public ScriptObject FunctionName { get; }
+        private readonly ScriptObject _functionName;
 
         public override void Execute(InterpreterState state)
         {
@@ -23,13 +23,12 @@ namespace EGScript.OperationCodes
             var instance = state.Stack.Peek();
             //_stack.Pop(); <- why is this part commented out in the original C++ code?
 
-            var t = instance.Type;
-            if (t != ObjectType.INSTANCE)
+            if (instance.Type != ObjectType.INSTANCE)
                 throw new InterpreterException($"Member call expected class instance.");
 
             var _class = (instance as Instance).Class;
-            if (!FunctionName.TryGetString(out StringObj s))
-                throw new InterpreterException($"Instruction object was of type '{FunctionName.TypeName}', expected 'string'.");
+            if (!_functionName.TryGetString(out StringObj s))
+                throw new InterpreterException($"Instruction object was of type '{_functionName.TypeName}', expected 'string'.");
 
             var callFunction = _class.FindFunction(s.Text);
             if (callFunction == null)

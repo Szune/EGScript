@@ -1,11 +1,11 @@
-﻿using System;
-using EGScript;
+﻿using EGScript;
 using EGScript.Helpers;
 using EGScript.Objects;
 using EGScript.Scripter;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System;
 
 namespace EGScriptTest
 {
@@ -845,7 +845,7 @@ class test
     str;
     function test()
     {
-        str = ""hej"";
+        str = ""hejs"";
     }
 }
 
@@ -854,7 +854,96 @@ function main()
     var = new test();
     return var->str;
 }");
-            script.Run().As<StringObj>().Text.Should().Be("hejva");
+            script.Run().As<StringObj>().Text.Should().Be("hejs");
+        }
+
+        [TestMethod]
+        public void Class_Members_Should_Be_Mutable()
+        {
+            var script = new Script(@"
+class test
+{
+    str;
+    function test()
+    {
+    }
+}
+
+function main()
+{
+    var = new test();
+    var->str = ""mutable"";
+    return var->str;
+}");
+            script.Run().As<StringObj>().Text.Should().Be("mutable");
+        }
+
+        [TestMethod]
+        public void Classes_Should_Be_Able_To_Have_Other_Classes_As_Members()
+        {
+            var script = new Script(@"
+class other
+{
+    function other()
+    {
+
+    }
+
+    function doSomething()
+    {
+        return 13;
+    }
+}
+class test
+{
+    something;
+    function test()
+    {
+        something = new other();
+    }
+}
+
+function main()
+{
+    var = new test();
+    val = var->something;
+    return val->doSomething();
+}");
+            script.Run().As<Number>().Value.Should().Be(13);
+        }
+
+        [TestMethod]
+        public void Class_Member_Nested_Access()
+        {
+            throw new NotImplementedException("Nested member access needs to be implemented in the parser first");
+            var script = new Script(@"
+class other
+{
+    function other()
+    {
+
+    }
+
+    function doSomething()
+    {
+        return 13;
+    }
+}
+class test
+{
+    something;
+    function test()
+    {
+        something = new other();
+    }
+}
+
+function main()
+{
+    var = new test();
+    return var->something->doSomething();
+}");
+            script.Run().As<Number>().Value.Should().Be(13);
         }
 
         [TestMethod]
@@ -869,7 +958,7 @@ class test
 
     function doStuff()
     {
-        return 5+5;
+        return 5+7;
     }
 }
 
@@ -878,7 +967,36 @@ function main()
     var = new test();
     return var->doStuff();
 }");
-            script.Run().As<Number>().Value.Should().Be(10);
+            var val = script.Run().As<Number>().Value;
+            val.Should().Be(12);
+            Console.WriteLine(val);
+        }
+
+        [TestMethod]
+        public void Class_Methods_Which_Take_Arguments_Should_Be_Usable()
+        {
+            throw new NotImplementedException($"Methods with arguments have not been entirely implemented in the OpCode yet");
+            var script = new Script(@"
+class test
+{
+    function test()
+    {
+    }
+
+    function doStuff(one, two)
+    {
+        return one+two;
+    }
+}
+
+function main()
+{
+    var = new test();
+    return var->doStuff(3,4);
+}");
+            var val = script.Run().As<Number>().Value;
+            val.Should().Be(7);
+            Console.WriteLine(val);
         }
     }
 }

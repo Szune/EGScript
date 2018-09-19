@@ -8,5 +8,10 @@ namespace EGScript.Helpers
         {
             Console.WriteLine(toPrint);
         }
+
+        public void PrintException(string toPrint, Exception exception)
+        {
+            Console.WriteLine($"{toPrint}: {exception.Message}");
+        }
     }
 }

@@ -49,6 +49,11 @@ namespace EGScript.OperationCodes
             return new Set(variableName);
         }
 
+        public static SetMember SetMember(StringObj memberName, StringObj instanceName)
+        {
+            return new SetMember(memberName, instanceName);
+        }
+
         public static Push Push(ScriptObject scriptObject)
         {
             return new Push(scriptObject);
@@ -82,6 +87,11 @@ namespace EGScript.OperationCodes
         public static MemberFunctionCall MemberFunctionCall(StringObj functionName)
         {
             return new MemberFunctionCall(functionName);
+        }
+
+        public static MemberAccess MemberAccess()
+        {
+            return new MemberAccess();
         }
 
         public static ExportedFunctionCall ExportedFunctionCall(StringObj functionName)

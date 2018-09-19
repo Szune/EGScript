@@ -19,8 +19,8 @@ namespace EGScript.OperationCodes
         {
             if (!VariableName.TryGetString(out StringObj s))
                 throw new InterpreterException($"Instruction object was of type '{VariableName.TypeName}', expected 'string'.");
-
-            state.Scopes.Peek().Define(s.Text, state.Stack.Peek());
+            var scope = state.Scopes.Peek();
+            scope.Define(s.Text, state.Stack.Peek());
         }
     }
 }

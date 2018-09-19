@@ -344,7 +344,12 @@ namespace EGScript.Scripter
 
         public void Visit(ASTAssignment expression, Function function)
         {
-            switch(expression.OperationType)
+            WriteAssignmentCode(expression, function);
+        }
+
+        private void WriteAssignmentCode(ASTAssignment expression, Function function)
+        {
+            switch (expression.OperationType)
             {
                 case ASTAssignment.AssignmentType.ASSIGNMENT:
                     {
@@ -352,10 +357,8 @@ namespace EGScript.Scripter
                         {
                             function.Scope.Define(expression.Variable, ObjectFactory.Null);
                         }
-
-
+                        
                         expression.Expression.Accept(this, function);
-                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.ADDITION:
@@ -368,7 +371,6 @@ namespace EGScript.Scripter
                         function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
                         function.Code.Write(OpCodeFactory.Add);
-                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.SUBTRACTION:
@@ -381,12 +383,11 @@ namespace EGScript.Scripter
                         function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
                         function.Code.Write(OpCodeFactory.Subtract);
-                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.MULTIPLICATION:
                     {
-                        if(function.Scope.Find(expression.Variable) == null)
+                        if (function.Scope.Find(expression.Variable) == null)
                         {
                             throw new CompilerException($"operator '*=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
@@ -394,12 +395,11 @@ namespace EGScript.Scripter
                         function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
                         function.Code.Write(OpCodeFactory.Multiply);
-                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
                 case ASTAssignment.AssignmentType.DIVISION:
                     {
-                        if(function.Scope.Find(expression.Variable) == null)
+                        if (function.Scope.Find(expression.Variable) == null)
                         {
                             throw new CompilerException($"operator '/=' cannot be used with undefined variable '{expression.Variable}'.");
                         }
@@ -407,10 +407,16 @@ namespace EGScript.Scripter
                         function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Variable)));
                         expression.Expression.Accept(this, function);
                         function.Code.Write(OpCodeFactory.Divide);
-                        function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
                     }
                     break;
             }
+            // write set
+            if(expression is ASTMemberAssignmentInstance astmai)
+                function.Code.Write(OpCodeFactory.SetMember(ObjectFactory.String(expression.Variable), ObjectFactory.String(astmai.InstanceName)));
+            else if(expression is ASTMemberAssignment)
+                function.Code.Write(OpCodeFactory.SetMember(ObjectFactory.String(expression.Variable), null));
+            else
+                function.Code.Write(OpCodeFactory.Set(ObjectFactory.String(expression.Variable)));
         }
 
         public void Visit(ASTCompare expression, Function function)
@@ -519,9 +525,26 @@ namespace EGScript.Scripter
             for (int i = 0; i < expression.Arguments.Count; i++)
                 expression.Arguments[i].Accept(this, function);
 
-            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.Base)));
+            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.InstanceName)));
             function.Code.Write(OpCodeFactory.Push(ObjectFactory.Number(expression.Arguments.Count)));
             function.Code.Write(OpCodeFactory.MemberFunctionCall(ObjectFactory.String(expression.Name)));
+        }
+
+        public void Visit(ASTMemberAssignmentInstance expression, Function function)
+        {
+            WriteAssignmentCode(expression, function);
+        }
+
+        public void Visit(ASTMemberAssignment expression, Function function)
+        {
+            WriteAssignmentCode(expression, function);
+        }
+
+        public void Visit(ASTMemberAccess expression, Function function)
+        {
+            function.Code.Write(OpCodeFactory.Push(ObjectFactory.String(expression.Name)));
+            function.Code.Write(OpCodeFactory.Reference(ObjectFactory.String(expression.InstanceName)));
+            function.Code.Write(OpCodeFactory.MemberAccess());
         }
 
         public void Visit(ASTIdentifier expression, Function function)

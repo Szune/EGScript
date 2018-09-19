@@ -7,17 +7,17 @@ namespace EGScript.OperationCodes
     {
         public Set(ScriptObject variableName)
         {
-            VariableName = variableName;
+            _variableName = variableName;
         }
 
-        public ScriptObject VariableName { get; }
-
+        private readonly ScriptObject _variableName;
         public override void Execute(InterpreterState state)
         {
-            if (!VariableName.TryGetString(out StringObj s))
-                throw new InterpreterException($"Instruction object was of type '{VariableName.TypeName}', expected 'string'.");
+            if (!_variableName.TryGetString(out StringObj s))
+                throw new InterpreterException($"Instruction object was of type '{_variableName.TypeName}', expected 'string'.");
 
-            state.Scopes.Peek().Set(s.Text, state.Stack.Peek());
+            var scope = state.Scopes.Peek();
+            scope.Set(s.Text, state.Stack.Peek());
         }
     }
 }
